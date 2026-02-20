@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FortiGate Delivery Master v5</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        body { font-family: 'Noto Sans JP', sans-serif; }
+        .tab-active { border-bottom: 3px solid #dc2626; color: #dc2626; }
+        .system-tag { display: inline-flex; align-items: center; background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; margin: 2px; font-size: 0.75rem; border: 1px solid #fecaca; }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f8fafc; border: 1px solid #e2e8f0; margin-bottom: 0.5rem; border-radius: 0.375rem; }
+        tr:hover .action-btns { opacity: 1; }
+        .action-btns { opacity: 0.3; transition: opacity 0.2s; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen pb-10">
+
+    <nav class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="location.reload()">
+                <div class="bg-red-600 p-2 rounded-lg">
+                    <i class="fas fa-server text-white text-xl"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tighter">FG Delivery <span class="text-red-500">Master</span></span>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
+                <button onclick="document.getElementById('import-file').click()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded text-sm border border-slate-600 shadow-sm transition-all">
+                    <i class="fas fa-folder-open mr-1 text-yellow-400"></i>読込
+                </button>
+                <button onclick="exportData()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded text-sm border border-slate-600 shadow-sm transition-all">
+                    <i class="fas fa-save mr-1 text-blue-400"></i>保存
+                </button>
+                <div class="h-6 border-l border-slate-600 mx-2"></div>
+                <button onclick="enterSettings()" class="text-slate-300 hover:text-white hover:rotate-90 transition-all duration-300 ml-2">
+                    <i class="fas fa-cog text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex space-x-8 mb-6 border-b border-gray-200">
+            <button onclick="switchTab('list')" id="tab-list" class="pb-4 font-bold transition-all tab-active">
+                <i class="fas fa-list mr-2"></i>納品一覧
+            </button>
+            <button onclick="switchTab('register')" id="tab-register" class="pb-4 font-bold text-gray-500 hover:text-red-600 transition-all">
+                <i class="fas fa-plus-square mr-2"></i><span id="reg-tab-label">新規登録</span>
+            </button>
+            <button onclick="switchTab('settings')" id="tab-settings" class="hidden pb-4 font-bold text-gray-500 hover:text-blue-600 transition-all">
+                <i class="fas fa-wrench mr-2"></i>管理者設定
+            </button>
+        </div>
+
+        <div id="content-list" class="block">
+            <div class="mb-6 flex gap-4">
+                <div class="relative w-full md:w-1/2 lg:w-1/3">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </span>
+                    <input type="text" id="search-input" onkeyup="renderTable()" class="w-full border border-gray-300 rounded-lg py-2.5 pl-10 pr-4 shadow-sm focus:border-red-500 focus:ring-red-500 outline-none" placeholder="納品先, 地域, 型番, S/N, IP で検索...">
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[1000px]">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-gray-200 text-slate-600 text-xs uppercase font-bold tracking-wider">
+                            <th class="px-6 py-4">納品先 / 地域</th>
+                            <th class="px-6 py-4">型番 / S/N</th>
+                            <th class="px-6 py-4">管理IP</th>
+                            <th class="px-6 py-4">FW情報</th>
+                            <th class="px-6 py-4">パスワード</th>
+                            <th class="px-6 py-4">相乗り部門システム</th>
+                            <th class="px-6 py-4 text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-tbody" class="divide-y divide-gray-100">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="content-register" class="hidden">
+            <div class="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-md border border-gray-100">
+                <h2 id="form-title" class="text-2xl font-bold text-slate-800 mb-6 border-l-4 border-red-600 pl-4">機器情報の新規登録</h2>
+                <input type="hidden" id="edit-index" value="-1">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div><label class="block text-sm font-bold text-gray-700 mb-2">納品先</label><input type="text" id="reg-customer" class="w-full border-gray-300 rounded-lg shadow-sm border p-2.5 focus:ring-2 focus:ring-red-500 outline-none"></div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">地域</label>
+                        <input list="region-options" id="reg-region" class="w-full border-gray-300 rounded-lg shadow-sm border p-2.5 outline-none">
+                        <datalist id="region-options"><option value="秋田"><option value="青森"><option value="岩手"><option value="宮城"></datalist>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">型番</label>
+                        <input list="model-options" id="reg-model" class="w-full border-gray-300 rounded-lg shadow-sm border p-2.5 outline-none">
+                        <datalist id="model-options"></datalist>
+                    </div>
+                    <div><label class="block text-sm font-bold text-gray-700 mb-2">シリアル番号</label><input type="text" id="reg-serial" class="w-full border-gray-300 rounded-lg shadow-sm border p-2.5 outline-none"></div>
+                    <div><label class="block text-sm font-bold text-gray-700 mb-2">管理IPアドレス</label><input type="text" id="reg-ip" class="w-full border-gray-300 rounded-lg shadow-sm border p-2.5 outline-none"></div>
+                    <div><label class="block text-sm font-bold text-gray-700 mb-2">FWバージョン</label><input type="text" id="reg-fw-ver" class="w-full border-gray-300 rounded-lg shadow-sm border p-2.5 outline-none"></div>
+                    <div><label class="block text-sm font-bold text-gray-700 mb-2">FW更新日</label><input type="date" id="reg-fw-date" class="w-full border-gray-300 rounded-lg shadow-sm border p-2.5 outline-none"></div>
+                    <div><label class="block text-sm font-bold text-gray-700 mb-2">パスワード</label><input type="text" id="reg-pw" class="w-full border-gray-300 rounded-lg shadow-sm border p-2.5 outline-none"></div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">相乗り部門システム（複数登録可）</label>
+                        <div class="flex gap-2 mb-2">
+                            <select id="reg-sys-select" class="flex-1 border-gray-300 rounded-lg shadow-sm border p-2.5 outline-none"></select>
+                            <button onclick="addSystemTag()" class="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors">追加</button>
+                        </div>
+                        <div id="selected-systems" class="flex flex-wrap p-3 bg-gray-50 rounded-lg border border-dashed border-gray-300 min-h-[50px]"></div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-end space-x-4">
+                    <button id="cancel-edit-btn" onclick="cancelEdit()" class="hidden bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-300 transition-all">キャンセル</button>
+                    <button onclick="saveData()" class="bg-red-600 text-white px-10 py-3 rounded-xl font-bold shadow-lg hover:bg-red-700 transition-all transform hover:-translate-y-1">
+                        <i class="fas fa-save mr-2"></i><span id="save-btn-label">一覧に登録する</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="content-settings" class="hidden">
+            <div class="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-md border border-gray-100">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6 border-l-4 border-blue-600 pl-4"><i class="fas fa-wrench mr-2"></i>システム管理者設定</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                        <h3 class="text-lg font-bold text-slate-700 mb-4 border-b pb-2">相乗り部門システム一覧</h3>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="new-master-sys" class="flex-1 border border-gray-300 rounded p-2 text-sm outline-none focus:border-blue-500" placeholder="新しいシステム名">
+                            <button onclick="addMasterSetting('system')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">追加</button>
+                        </div>
+                        <div id="settings-sys-list" class="max-h-60 overflow-y-auto"></div>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                        <h3 class="text-lg font-bold text-slate-700 mb-4 border-b pb-2">型番一覧</h3>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="new-master-model" class="flex-1 border border-gray-300 rounded p-2 text-sm outline-none focus:border-blue-500" placeholder="FG-200F など">
+                            <button onclick="addMasterSetting('model')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">追加</button>
+                        </div>
+                        <div id="settings-model-list" class="max-h-60 overflow-y-auto"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const AUTH_PW = "sigma-sol2012";
+        const LOCAL_STORAGE_KEY = "fortigate_master_v5";
+
+        let masterSystems = ["情報システム部", "営業部", "経理・総務", "基幹システム", "監視カメラ"];
+        let masterModels = ["FG-40F", "FG-60F", "FG-80F", "FG-100F", "FG-200F"];
+        let inventoryData = [];
+        let selectedSystems = [];
+
+        // --- 保存・読込 ---
+        function saveToLocal() {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ inventoryData, masterSystems, masterModels }));
+        }
+        function loadFromLocal() {
+            const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                inventoryData = parsed.inventoryData || [];
+                masterSystems = parsed.masterSystems || masterSystems;
+                masterModels = parsed.masterModels || masterModels;
+            }
+        }
+        function exportData() {
+            const blob = new Blob([JSON.stringify({ inventoryData, masterSystems, masterModels }, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `FG_納品データ_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            alert("NAS（\\\\172.30.254.10\\小松テスト$）に保存してください。");
+        }
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    inventoryData = parsed.inventoryData;
+                    masterSystems = parsed.masterSystems;
+                    masterModels = parsed.masterModels;
+                    saveToLocal();
+                    updateDynamicLists();
+                    renderTable();
+                    alert("読込完了！");
+                } catch (err) { alert("失敗: " + err); }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- UI制御 ---
+        function updateDynamicLists() {
+            document.getElementById('reg-sys-select').innerHTML = '<option value="">選択...</option>' + masterSystems.map(s => `<option value="${s}">${s}</option>`).join('');
+            document.getElementById('model-options').innerHTML = masterModels.map(m => `<option value="${m}">`).join('');
+        }
+        function switchTab(tab) {
+            ['list', 'register', 'settings'].forEach(t => {
+                document.getElementById(`content-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('tab-active');
+            });
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('tab-active');
+            if (tab === 'list') renderTable();
+            if (tab === 'register') updateDynamicLists();
+        }
+
+        // --- 登録・編集・削除コアロジック ---
+        function saveData() {
+            const idx = parseInt(document.getElementById('edit-index').value);
+            const newItem = {
+                customer: document.getElementById('reg-customer').value,
+                region: document.getElementById('reg-region').value,
+                model: document.getElementById('reg-model').value,
+                serial: document.getElementById('reg-serial').value,
+                ip: document.getElementById('reg-ip').value,
+                fw_version: document.getElementById('reg-fw-ver').value,
+                fw_updated_at: document.getElementById('reg-fw-date').value,
+                pw: document.getElementById('reg-pw').value,
+                systems: [...selectedSystems]
+            };
+
+            if(!newItem.customer) return alert("納品先を入力してください");
+
+            if(idx === -1) {
+                inventoryData.push(newItem);
+                alert("登録しました");
+            } else {
+                inventoryData[idx] = newItem;
+                alert("更新しました");
+                cancelEdit(); // 編集モード終了
+            }
+            
+            saveToLocal();
+            clearForm();
+            switchTab('list');
+        }
+
+        function editData(originalIdx) {
+            const item = inventoryData[originalIdx];
+            document.getElementById('edit-index').value = originalIdx;
+            document.getElementById('reg-customer').value = item.customer;
+            document.getElementById('reg-region').value = item.region;
+            document.getElementById('reg-model').value = item.model;
+            document.getElementById('reg-serial').value = item.serial;
+            document.getElementById('reg-ip').value = item.ip;
+            document.getElementById('reg-fw-ver').value = item.fw_version;
+            document.getElementById('reg-fw-date').value = item.fw_updated_at;
+            document.getElementById('reg-pw').value = item.pw;
+            selectedSystems = [...item.systems];
+            updateSystemTags();
+
+            // UIを編集モードに変更
+            document.getElementById('form-title').innerText = "機器情報の編集";
+            document.getElementById('save-btn-label').innerText = "更新内容を保存する";
+            document.getElementById('reg-tab-label').innerText = "編集モード";
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+            
+            switchTab('register');
+        }
+
+        function cancelEdit() {
+            document.getElementById('edit-index').value = "-1";
+            document.getElementById('form-title').innerText = "機器情報の新規登録";
+            document.getElementById('save-btn-label').innerText = "一覧に登録する";
+            document.getElementById('reg-tab-label').innerText = "新規登録";
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            clearForm();
+            switchTab('list');
+        }
+
+        function deleteData(originalIdx) {
+            if(confirm(`「${inventoryData[originalIdx].customer}」のデータを削除してもよろしいですか？`)) {
+                inventoryData.splice(originalIdx, 1);
+                saveToLocal();
+                renderTable();
+            }
+        }
+
+        function clearForm() {
+            ['reg-customer','reg-region','reg-model','reg-serial','reg-ip','reg-fw-ver','reg-fw-date','reg-pw'].forEach(id => document.getElementById(id).value = "");
+            selectedSystems = [];
+            updateSystemTags();
+        }
+
+        // --- その他機能（検索、パスワード等） ---
+        function renderTable() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const tbody = document.getElementById('inventory-tbody');
+            
+            const filtered = inventoryData.map((item, index) => ({item, index}))
+                .filter(obj => {
+                    return obj.item.customer.toLowerCase().includes(searchTerm) ||
+                           obj.item.region.toLowerCase().includes(searchTerm) ||
+                           obj.item.model.toLowerCase().includes(searchTerm) ||
+                           (obj.item.serial && obj.item.serial.toLowerCase().includes(searchTerm)) ||
+                           (obj.item.ip && obj.item.ip.toLowerCase().includes(searchTerm));
+                });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-gray-400">該当するデータがありません</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(obj => `
+                <tr class="hover:bg-slate-50 transition-colors group">
+                    <td class="px-6 py-4"><div class="font-bold text-slate-800">${obj.item.customer}</div><div class="text-xs text-slate-400 mt-1">${obj.item.region}</div></td>
+                    <td class="px-6 py-4"><div class="font-mono text-sm font-bold text-blue-700">${obj.item.model}</div><div class="text-[10px] text-gray-500 mt-1">S/N: ${obj.item.serial || '-'}</div></td>
+                    <td class="px-6 py-4"><span class="bg-gray-100 px-2 py-1 rounded text-xs font-mono text-gray-700 border border-gray-200">${obj.item.ip || '-'}</span></td>
+                    <td class="px-6 py-4"><div class="text-sm font-bold text-green-600">${obj.item.fw_version}</div><div class="text-[10px] text-gray-400 mt-1">${obj.item.fw_updated_at}</div></td>
+                    <td class="px-6 py-4"><button onclick="showPassword(${obj.index})" class="text-xs bg-white hover:bg-gray-100 text-gray-600 py-1 px-3 rounded-full border border-gray-300 shadow-sm">表示</button></td>
+                    <td class="px-6 py-4"><div class="flex flex-wrap">${obj.item.systems.map(s => `<span class="system-tag">${s}</span>`).join('')}</div></td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="action-btns flex justify-center space-x-2">
+                            <button onclick="editData(${obj.index})" class="p-2 text-blue-600 hover:bg-blue-50 rounded" title="編集"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteData(${obj.index})" class="p-2 text-red-600 hover:bg-red-50 rounded" title="削除"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showPassword(idx) {
+            if (prompt("マスターパスワードを入力") === AUTH_PW) alert("パスワード: " + inventoryData[idx].pw);
+        }
+        function enterSettings() {
+            if (prompt("管理者パスワードを入力") === AUTH_PW) { document.getElementById('tab-settings').classList.remove('hidden'); switchTab('settings'); renderSettingsLists(); }
+        }
+        function addSystemTag() {
+            const v = document.getElementById('reg-sys-select').value;
+            if (v && !selectedSystems.includes(v)) { selectedSystems.push(v); updateSystemTags(); }
+        }
+        function updateSystemTags() {
+            document.getElementById('selected-systems').innerHTML = selectedSystems.map(s => `<span class="system-tag">${s} <i class="fas fa-times ml-2 cursor-pointer hover:text-red-500" onclick="selectedSystems=selectedSystems.filter(x=>x!=='${s}');updateSystemTags()"></i></span>`).join('');
+        }
+        function renderSettingsLists() {
+            document.getElementById('settings-sys-list').innerHTML = masterSystems.map(s => `<div class="setting-item"><span class="text-sm">${s}</span><button onclick="masterSystems=masterSystems.filter(x=>x!=='${s}');saveToLocal();renderSettingsLists();updateDynamicLists()" class="text-red-500"><i class="fas fa-trash"></i></button></div>`).join('');
+            document.getElementById('settings-model-list').innerHTML = masterModels.map(m => `<div class="setting-item"><span class="text-sm font-mono font-bold text-blue-700">${m}</span><button onclick="masterModels=masterModels.filter(x=>x!=='${m}');saveToLocal();renderSettingsLists();updateDynamicLists()" class="text-red-500"><i class="fas fa-trash"></i></button></div>`).join('');
+        }
+        function addMasterSetting(type) {
+            const input = document.getElementById(type === 'system' ? 'new-master-sys' : 'new-master-model');
+            const val = input.value.trim();
+            if (val) {
+                if (type === 'system') masterSystems.push(val); else masterModels.push(val);
+                input.value = ""; saveToLocal(); renderSettingsLists(); updateDynamicLists();
+            }
+        }
+
+        // 起動
+        loadFromLocal();
+        updateDynamicLists();
+        renderTable();
+    </script>
+</body>
+</html>
