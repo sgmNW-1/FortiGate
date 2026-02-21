@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FortiGate 納品管理マスター v11 Cloud</title>
+    <title>FortiGate 納品管理マスター v12 Cloud</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -14,11 +14,15 @@
         .news-card { background: white; border: 1px solid #e2e8f0; border-left: 4px solid #dc2626; transition: all 0.2s; }
         .news-card:hover { transform: translateX(5px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
         .vulnerable-badge { background-color: #fef2f2; border: 1px solid #fee2e2; color: #b91c1c; }
+        .auto-vuln-badge { background-color: #fff7ed; border: 1px solid #ffedd5; color: #c2410c; }
         tr:hover .action-btns { opacity: 1; }
         .action-btns { opacity: 0.2; transition: opacity 0.2s; }
         .sync-indicator { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
         .online { background-color: #10b981; box-shadow: 0 0 8px #10b981; animation: pulse 2s infinite; }
+        /* 手動マスタの警告（赤） */
         .alert-row { background-color: #fff1f2 !important; border-left: 4px solid #ef4444; }
+        /* 自動検知の警告（オレンジ） */
+        .auto-alert-row { background-color: #fff7ed !important; border-left: 4px solid #f97316; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
@@ -29,7 +33,7 @@
             <div class="flex items-center space-x-3 cursor-pointer" onclick="location.reload()">
                 <div class="bg-red-600 p-2 rounded-lg"><i class="fas fa-cloud text-white text-xl"></i></div>
                 <div>
-                    <span class="text-xl font-bold tracking-tighter">FG 納品管理 <span class="text-red-500">Cloud Master v11</span></span>
+                    <span class="text-xl font-bold tracking-tighter">FG 納品管理 <span class="text-red-500">Cloud Master v12</span></span>
                     <p class="text-[10px] text-slate-400 leading-none mt-1"><span class="sync-indicator online"></span>クラウド同期中</p>
                 </div>
             </div>
@@ -129,16 +133,28 @@
         <div id="content-news" class="hidden">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-2">
-                    <h3 class="font-bold text-lg mb-4 text-slate-700 flex items-center"><i class="fas fa-rss text-orange-500 mr-2"></i>FortiGuard 最新ニュース</h3>
+                    <h3 class="font-bold text-lg mb-4 text-slate-700 flex items-center"><i class="fas fa-rss text-orange-500 mr-2"></i>FortiGuard 最新ニュース（英語原文）</h3>
                     <div id="news-container" class="space-y-4"></div>
                 </div>
-                <div class="bg-white p-6 rounded-2xl border-2 border-red-200 h-fit shadow-md">
-                    <h3 class="text-red-700 font-bold mb-4 border-b pb-2 flex items-center"><i class="fas fa-biohazard mr-2 text-xl"></i>要注意バージョン</h3>
-                    <p class="text-[10px] text-slate-500 mb-4 leading-relaxed">
-                        ※設定タブの「要注意FWマスタ」に登録されたバージョンがここに表示されます。このバージョンを使っている機器は一覧表で赤く警告されます。
-                    </p>
-                    <div class="space-y-3" id="vuln-list-display">
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-2xl border-2 border-orange-200 shadow-md">
+                        <h3 class="text-orange-700 font-bold mb-3 border-b border-orange-200 pb-2 flex items-center"><i class="fas fa-robot mr-2 text-xl"></i>AI自動抽出バージョン</h3>
+                        <p class="text-[10px] text-slate-500 mb-3 leading-relaxed">
+                            ※左記の英語ニュースから自動で抜き出したFWバージョンです。一覧表では<span class="text-orange-600 font-bold">オレンジ色</span>で警告されます。（※英語文章の解析のため誤検知が含まれる場合があります）
+                        </p>
+                        <div class="flex flex-wrap gap-2" id="auto-vuln-list-display">
+                            <span class="text-xs text-slate-400">取得中...</span>
                         </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl border-2 border-red-200 shadow-md">
+                        <h3 class="text-red-700 font-bold mb-3 border-b border-red-200 pb-2 flex items-center"><i class="fas fa-biohazard mr-2 text-xl"></i>確定要注意バージョン(手動)</h3>
+                        <p class="text-[10px] text-slate-500 mb-3 leading-relaxed">
+                            ※設定タブの「要注意FWマスタ」に登録された確実な危険バージョンです。一覧表では<span class="text-red-600 font-bold">赤色</span>で強く警告されます。
+                        </p>
+                        <div class="space-y-2" id="vuln-list-display">
+                            </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -192,13 +208,16 @@
         const inventoryCol = collection(db, "inventory");
         const masterDoc = doc(db, "config", "masters");
 
-        // 初期データ（Firebaseにデータがない場合に使用）
+        // 初期データ
         window.inventoryData = [];
         window.masterRegions = ["北海道", "東北", "関東", "中部", "近畿", "中国", "四国", "九州", "沖縄"];
         window.masterSystems = ["情報システム部", "営業部", "経理・総務", "基幹システム"];
         window.masterModels = ["FG-40F", "FG-60F", "FG-80F", "FG-100F"];
         window.masterVuln = ["7.2.0", "7.0.5"]; // デフォルトの要注意バージョン
         
+        // 新規：自動検知されたFWバージョンを格納する配列
+        window.autoDetectedVuln = [];
+
         window.selectedSystems = [];
         const ADMIN_PW = "komayuu28";
         const VIEW_PW = "sigma-sol2012";
@@ -218,9 +237,8 @@
                 window.masterVuln = data.vuln || window.masterVuln;
                 updateDynamicLists();
                 renderVulnDisplay();
-                renderTable(); // FWマスタが更新されたら一覧の赤色警告も更新する
+                renderTable();
             } else {
-                // 初回のみマスタを作成
                 setDoc(masterDoc, { regions: window.masterRegions, systems: window.masterSystems, models: window.masterModels, vuln: window.masterVuln });
             }
         });
@@ -236,7 +254,7 @@
                 ip: document.getElementById('reg-ip').value,
                 fw_version: document.getElementById('reg-fw-ver').value,
                 fw_updated_at: document.getElementById('reg-fw-date').value,
-                auto_fw: document.getElementById('reg-autofw').value, // 新規：自動FW設定
+                auto_fw: document.getElementById('reg-autofw').value,
                 pw: document.getElementById('reg-pw').value,
                 systems: [...window.selectedSystems],
                 updatedAt: new Date()
@@ -260,7 +278,7 @@
             }
         };
 
-        // 一覧表の描画
+        // 一覧表の描画 (警告色のロジック追加)
         window.renderTable = () => {
             const term = document.getElementById('search-input').value.toLowerCase();
             const tbody = document.getElementById('inventory-tbody');
@@ -274,10 +292,23 @@
             document.getElementById('count-total').innerText = filtered.length;
             
             tbody.innerHTML = filtered.map(item => {
-                // 要注意バージョンの判定
-                const isVuln = window.masterVuln.includes(item.fw_version);
-                const rowClass = isVuln ? "alert-row" : "hover:bg-slate-50 transition-colors";
-                const fwClass = isVuln ? "text-red-600 font-bold bg-red-100 px-2 py-1 rounded border border-red-200" : "text-green-700 font-bold";
+                // 警告判定ロジック
+                const isMasterVuln = window.masterVuln.includes(item.fw_version);
+                const isAutoVuln = window.autoDetectedVuln.includes(item.fw_version);
+                
+                let rowClass = "hover:bg-slate-50 transition-colors";
+                let fwClass = "text-green-700 font-bold";
+                let alertIcon = "";
+                
+                if (isMasterVuln) {
+                    rowClass = "alert-row";
+                    fwClass = "text-red-600 font-bold bg-red-100 px-2 py-1 rounded border border-red-200";
+                    alertIcon = '<i class="fas fa-exclamation-triangle text-red-500 mr-1" title="確定済みの危険バージョン"></i>';
+                } else if (isAutoVuln) {
+                    rowClass = "auto-alert-row";
+                    fwClass = "text-orange-600 font-bold bg-orange-100 px-2 py-1 rounded border border-orange-200";
+                    alertIcon = '<i class="fas fa-robot text-orange-500 mr-1" title="AI自動検知された可能性のあるバージョン"></i>';
+                }
                 
                 // 自動FWのバッジ色判定
                 let autoFwBadge = '<span class="text-slate-400 text-xs">未設定</span>';
@@ -289,7 +320,7 @@
                     <td class="px-6 py-5"><div class="font-bold text-slate-800">${item.customer}</div><div class="text-[10px] text-slate-500"><i class="fas fa-map-marker-alt mr-1"></i>${item.region || '未登録'}</div></td>
                     <td class="px-6 py-5"><div class="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded inline-block border">${item.model || '-'}</div><div class="text-[10px] text-slate-500 mt-1 font-mono">${item.serial || '-'}</div></td>
                     <td class="px-6 py-5 text-xs font-mono">${item.ip || '-'}</td>
-                    <td class="px-6 py-5"><div class="text-xs ${fwClass}">${item.fw_version || '-'}</div><div class="text-[9px] text-slate-400 mt-1">${item.fw_updated_at || ''}</div></td>
+                    <td class="px-6 py-5"><div class="text-xs ${fwClass}">${alertIcon}${item.fw_version || '-'}</div><div class="text-[9px] text-slate-400 mt-1">${item.fw_updated_at || ''}</div></td>
                     <td class="px-6 py-5">${autoFwBadge}</td>
                     <td class="px-6 py-5"><button onclick="showPw('${item.pw || ''}')" class="text-[10px] bg-white hover:bg-slate-50 py-1.5 px-3 rounded-md border shadow-sm transition-all"><i class="fas fa-key mr-1 text-slate-400"></i>表示</button></td>
                     <td class="px-6 py-5"><div class="flex flex-wrap">${(item.systems || []).map(s => `<span class="system-tag">${s}</span>`).join('')}</div></td>
@@ -377,7 +408,6 @@
             else alert("パスワードが違います"); 
         };
 
-        // タグ関連
         window.addSystemTag = () => {
             const v = document.getElementById('reg-sys-select').value;
             if(v && !window.selectedSystems.includes(v)) { window.selectedSystems.push(v); updateSystemTags(); }
@@ -392,16 +422,12 @@
         };
         window.removeTag = (s) => { window.selectedSystems = window.selectedSystems.filter(x => x !== s); updateSystemTags(); };
 
-        // プルダウン等の更新
         window.updateDynamicLists = () => {
-            // 地域・型番のデータリスト（入力候補）
             document.getElementById('region-options').innerHTML = window.masterRegions.map(r => `<option value="${r}">`).join('');
             document.getElementById('model-options').innerHTML = window.masterModels.map(m => `<option value="${m}">`).join('');
-            // システムのセレクトボックス
             document.getElementById('reg-sys-select').innerHTML = '<option value="">システムを選択...</option>' + window.masterSystems.map(s => `<option value="${s}">${s}</option>`).join('');
         };
 
-        // 設定画面と脆弱性表示の更新
         window.renderMasterLists = () => {
             const createList = (arr, type) => arr.map(item => `<div class="flex justify-between items-center bg-white p-2 border rounded-lg text-sm mb-1 hover:bg-slate-50"><span>${item}</span><button onclick="removeMaster('${type}', '${item}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button></div>`).join('');
             document.getElementById('settings-region-list').innerHTML = createList(window.masterRegions, 'region');
@@ -426,32 +452,70 @@
             } 
         };
 
-        // RSSニュース取得
+        // RSSニュース取得 ＆ 自動抽出ロジック
         async function fetchNews() {
             const container = document.getElementById('news-container');
-            if(container.innerHTML !== "") return; // 既に読み込み済みの場合はスキップ
-            container.innerHTML = '<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin text-3xl mb-3"></i><br>ニュースを取得中...</div>';
+            if(container.innerHTML !== "" && !container.innerHTML.includes("取得中")) return; 
+            container.innerHTML = '<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin text-3xl mb-3"></i><br>ニュースを取得・解析中...</div>';
+            
             try {
-                // RSS to JSON API を使用して FortiGuard の情報を取得
                 const rss = "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent("https://www.fortiguard.com/rss/ir.xml");
                 const res = await fetch(rss);
                 const data = await res.json();
-                container.innerHTML = data.items.slice(0, 8).map(i => `
+                
+                // バージョン番号を自動抽出するための配列（重複を防ぐためのSet）
+                let extractedVersions = new Set();
+                
+                // FortiOSのバージョン（例: 7.2.4, 6.4.12）を抽出するための正規表現ルール
+                const versionRegex = /\b([567]\.\d+\.\d+)\b/g;
+
+                container.innerHTML = data.items.slice(0, 8).map(i => {
+                    const descText = i.description.replace(/<[^>]*>?/gm, '');
+                    
+                    // 「FortiOS」という単語が含まれるニュースのみを解析対象とする
+                    if(descText.includes("FortiOS") || i.title.includes("FortiOS")) {
+                        const matches = descText.match(versionRegex);
+                        if(matches) {
+                            matches.forEach(m => extractedVersions.add(m));
+                        }
+                    }
+
+                    return `
                     <div class="news-card p-5 rounded-xl border">
                         <div class="flex items-center mb-2">
                             <span class="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold">PSIRT</span>
                             <span class="text-[10px] text-slate-400 ml-2">${i.pubDate ? i.pubDate.split(' ')[0] : ''}</span>
                         </div>
                         <h4 class="font-bold text-sm mb-2 text-slate-800">${i.title}</h4>
-                        <p class="text-[11px] text-slate-500 mb-3 line-clamp-2">${i.description.replace(/<[^>]*>?/gm, '')}</p>
+                        <p class="text-[11px] text-slate-500 mb-3 line-clamp-2">${descText}</p>
                         <a href="${i.link}" target="_blank" class="text-[10px] text-blue-600 font-bold hover:underline bg-blue-50 px-3 py-1.5 rounded-lg inline-block">公式の詳細を見る <i class="fas fa-external-link-alt ml-1"></i></a>
-                    </div>`).join('');
-            } catch (e) { container.innerHTML = '<div class="text-red-500 bg-red-50 p-4 rounded-xl border border-red-200">ニュースの取得に失敗しました。ネットワークを確認してください。</div>'; }
+                    </div>`;
+                }).join('');
+
+                // 抽出したバージョンをグローバル変数に保存して表示を更新
+                window.autoDetectedVuln = Array.from(extractedVersions);
+                
+                const autoContainer = document.getElementById('auto-vuln-list-display');
+                if(window.autoDetectedVuln.length > 0) {
+                    autoContainer.innerHTML = window.autoDetectedVuln.map(v => `<span class="auto-vuln-badge px-3 py-1 rounded text-xs font-bold tracking-widest shadow-sm">v ${v}</span>`).join('');
+                } else {
+                    autoContainer.innerHTML = '<span class="text-xs text-slate-400">現在検知されたバージョンはありません</span>';
+                }
+
+                // 一覧表を再描画して、自動検知された行をオレンジ色にする
+                renderTable();
+
+            } catch (e) { 
+                container.innerHTML = '<div class="text-red-500 bg-red-50 p-4 rounded-xl border border-red-200">ニュースの取得に失敗しました。</div>'; 
+                document.getElementById('auto-vuln-list-display').innerHTML = '<span class="text-xs text-red-400">解析エラー</span>';
+            }
         }
 
         // 初回実行
         updateDynamicLists();
         renderVulnDisplay();
+        // 背景でニュース解析を走らせておく
+        fetchNews();
     </script>
 </body>
 </html>
