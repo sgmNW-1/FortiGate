@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FortiGate 納品管理マスター v16 Multi-User Cloud</title>
+    <title>FortiGate 納品管理マスター v17 Dashboard & Log Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
-        body { font-family: 'Noto Sans JP', sans-serif; background-color: #f1f5f9; }
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: #f1f5f9; color: #1e293b; }
         .tab-active { border-bottom: 3px solid #dc2626; color: #dc2626; background-color: #fff; }
         .system-tag { display: inline-flex; align-items: center; background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; margin: 2px; font-size: 0.75rem; border: 1px solid #fecaca; }
-        .news-card { background: white; border: 1px solid #e2e8f0; border-left: 4px solid #dc2626; transition: all 0.2s; }
-        .news-card:hover { transform: translateX(5px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
         .vulnerable-badge { background-color: #fef2f2; border: 1px solid #fee2e2; color: #b91c1c; }
         .auto-vuln-badge { background-color: #fff7ed; border: 1px solid #ffedd5; color: #c2410c; }
         tr:hover .action-btns { opacity: 1; }
@@ -24,6 +22,7 @@
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         .scanning-pulse { animation: pulse 1.5s infinite; color: #3b82f6; }
         
+        /* ログイン背景 */
         .login-bg {
             background: linear-gradient(-45deg, #0f172a, #1e293b, #334155, #0f172a);
             background-size: 400% 400%;
@@ -34,18 +33,28 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
+
+        /* モーダルアニメーション */
+        .modal-enter { animation: modalFadeIn 0.3s ease-out; }
+        @keyframes modalFadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* スクロールバーカスタム */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="min-h-screen">
 
-    <div id="login-screen" class="fixed inset-0 login-bg flex items-center justify-center z-[100]">
+    <div id="login-screen" class="fixed inset-0 login-bg flex items-center justify-center z-[200]">
         <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md border-t-8 border-red-600 transform transition-all">
             <div class="text-center mb-8">
                 <div class="bg-red-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
                     <i class="fas fa-users-cog text-4xl text-red-600"></i>
                 </div>
                 <h1 class="text-2xl font-bold text-slate-800 tracking-tighter">FG 納品管理マスター</h1>
-                <p class="text-xs text-slate-500 mt-2">v16 Multi-User Edition</p>
+                <p class="text-xs text-slate-500 mt-2">v17 Dashboard & Log Edition</p>
             </div>
 
             <div class="space-y-5">
@@ -53,23 +62,21 @@
                     <label class="block text-sm font-bold text-slate-700 mb-1">ユーザー名</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-user"></i></span>
-                        <input type="text" id="login-user" class="w-full border border-slate-300 rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-red-500 bg-slate-50" placeholder="Username" onkeydown="if(event.key === 'Enter') document.getElementById('login-pass').focus()">
+                        <input type="text" id="login-user" class="w-full border border-slate-300 rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-red-500 bg-slate-50" placeholder="Username">
                     </div>
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">パスワード</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-lock"></i></span>
-                        <input type="password" id="login-pass" class="w-full border border-slate-300 rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-red-500 bg-slate-50" placeholder="Password" onkeydown="if(event.key === 'Enter') attemptLogin()">
+                        <input type="password" id="login-pass" class="w-full border border-slate-300 rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-red-500 bg-slate-50" placeholder="Password">
                     </div>
                 </div>
                 <button onclick="attemptLogin()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-slate-800 transition-colors mt-4 flex justify-center items-center">
                     ログイン <i class="fas fa-sign-in-alt ml-2"></i>
                 </button>
                 <div id="login-status-msg" class="text-center text-xs text-slate-500 mt-2"><i class="fas fa-circle-notch fa-spin mr-1"></i>データベース接続中...</div>
-                <div id="login-error" class="hidden text-center text-xs text-red-600 font-bold bg-red-50 p-2 rounded-lg border border-red-200 mt-4">
-                    ユーザー名またはパスワードが間違っています。
-                </div>
+                <div id="login-error" class="hidden text-center text-xs text-red-600 font-bold bg-red-50 p-2 rounded-lg border border-red-200 mt-4">ユーザー名またはパスワードが間違っています。</div>
             </div>
         </div>
     </div>
@@ -78,24 +85,56 @@
         <nav class="bg-slate-900 text-white shadow-xl sticky top-0 z-50">
             <div class="container mx-auto px-6 py-4 flex justify-between items-center">
                 <div class="flex items-center space-x-3 cursor-pointer" onclick="location.reload()">
-                    <div class="bg-red-600 p-2 rounded-lg"><i class="fas fa-cloud text-white text-xl"></i></div>
+                    <div class="bg-red-600 p-2 rounded-lg"><i class="fas fa-shield-virus text-white text-xl"></i></div>
                     <div>
-                        <span class="text-xl font-bold tracking-tighter">FG 納品管理 <span class="text-red-500">Cloud Master v16</span></span>
+                        <span class="text-xl font-bold tracking-tighter">FG 納品管理 <span class="text-red-500">Master v17</span></span>
                         <p class="text-[10px] text-slate-400 leading-none mt-1"><span class="sync-indicator online"></span>クラウド同期中</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-6">
-                    <span class="text-xs text-slate-400"><i class="fas fa-user-check mr-1 text-green-400"></i><span id="display-username"></span></span>
-                    <button onclick="enterSettings()" class="text-slate-400 hover:text-white transition-colors" title="管理者設定"><i class="fas fa-cog text-xl"></i></button>
+                    <span class="text-xs text-slate-400"><i class="fas fa-user-circle mr-1 text-green-400"></i><span id="display-username"></span></span>
+                    <button onclick="enterSettings()" class="text-slate-400 hover:text-white transition-colors"><i class="fas fa-cog text-xl"></i></button>
                 </div>
             </div>
         </nav>
 
         <div class="container mx-auto px-4 py-8">
-            <div class="flex space-x-2 mb-8 bg-gray-200 p-1 rounded-xl w-fit">
+            
+            <div id="dashboard-area" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white p-5 rounded-2xl border shadow-sm border-l-4 border-l-blue-500">
+                    <div class="text-slate-500 text-xs font-bold uppercase mb-1">登録デバイス合計</div>
+                    <div class="flex items-end justify-between">
+                        <div class="text-3xl font-black text-slate-800" id="stat-total">0</div>
+                        <div class="bg-blue-50 text-blue-600 p-2 rounded-lg"><i class="fas fa-server"></i></div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border shadow-sm border-l-4 border-l-red-500 cursor-pointer hover:bg-red-50 transition-colors" onclick="setSearchFilter('vuln')">
+                    <div class="text-slate-500 text-xs font-bold uppercase mb-1">脆弱性検知</div>
+                    <div class="flex items-end justify-between">
+                        <div class="text-3xl font-black text-red-600" id="stat-vuln">0</div>
+                        <div class="bg-red-50 text-red-600 p-2 rounded-lg"><i class="fas fa-biohazard"></i></div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border shadow-sm border-l-4 border-l-orange-500 cursor-pointer hover:bg-orange-50 transition-colors" onclick="setSearchFilter('update')">
+                    <div class="text-slate-500 text-xs font-bold uppercase mb-1">要アップデート</div>
+                    <div class="flex items-end justify-between">
+                        <div class="text-3xl font-black text-orange-600" id="stat-pending">0</div>
+                        <div class="bg-orange-50 text-orange-600 p-2 rounded-lg"><i class="fas fa-arrow-alt-circle-up"></i></div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border shadow-sm border-l-4 border-l-green-500">
+                    <div class="text-slate-500 text-xs font-bold uppercase mb-1">自動FW有効率</div>
+                    <div class="flex items-end justify-between">
+                        <div class="text-3xl font-black text-green-600" id="stat-auto-rate">0%</div>
+                        <div class="bg-green-50 text-green-600 p-2 rounded-lg"><i class="fas fa-robot"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex space-x-2 mb-8 bg-slate-200 p-1 rounded-xl w-fit">
                 <button onclick="switchTab('list')" id="tab-list" class="px-6 py-2.5 rounded-lg font-bold transition-all tab-active"><i class="fas fa-list mr-2"></i>納品一覧</button>
                 <button onclick="switchTab('register')" id="tab-register" class="px-6 py-2.5 rounded-lg font-bold text-gray-600 hover:bg-white transition-all"><i class="fas fa-plus-circle mr-2"></i>新規登録</button>
-                <button onclick="switchTab('news')" id="tab-news" class="px-6 py-2.5 rounded-lg font-bold text-gray-600 hover:bg-white transition-all"><i class="fas fa-shield-alt mr-2"></i>脆弱性・最新FW</button>
+                <button onclick="switchTab('news')" id="tab-news" class="px-6 py-2.5 rounded-lg font-bold text-gray-600 hover:bg-white transition-all"><i class="fas fa-satellite-dish mr-2"></i>インテリジェンス</button>
                 <button onclick="switchTab('settings')" id="tab-settings" class="hidden px-6 py-2.5 rounded-lg font-bold text-gray-600 hover:bg-white transition-all"><i class="fas fa-tools mr-2"></i>管理者設定</button>
             </div>
 
@@ -103,20 +142,20 @@
                 <div class="mb-6 flex flex-wrap gap-4 items-center">
                     <div class="relative flex-1 min-w-[300px]">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search"></i></span>
-                        <input type="text" id="search-input" onkeyup="renderTable()" class="w-full border border-slate-300 rounded-xl py-3 pl-10 pr-4 shadow-sm outline-none focus:ring-2 focus:ring-red-500" placeholder="納品先やFWバージョンで検索...">
+                        <input type="text" id="search-input" onkeyup="renderTable()" class="w-full border border-slate-300 rounded-xl py-3 pl-10 pr-4 shadow-sm outline-none focus:ring-2 focus:ring-red-500" placeholder="納品先・シリアル・FWバージョンで検索...">
                     </div>
-                    <div class="text-sm text-slate-500 bg-white px-4 py-3 rounded-xl border shadow-sm">登録件数: <span id="count-total" class="font-bold text-slate-800 text-lg">0</span> 件</div>
+                    <button onclick="clearSearchFilter()" id="clear-filter-btn" class="hidden text-xs bg-slate-200 px-4 py-3 rounded-xl font-bold hover:bg-slate-300 transition-all text-slate-600">フィルタ解除 <i class="fas fa-times"></i></button>
                 </div>
                 <div class="bg-white rounded-2xl shadow-sm border overflow-hidden overflow-x-auto">
-                    <table class="w-full text-left min-w-[1100px]">
+                    <table class="w-full text-left min-w-[1200px]">
                         <thead class="bg-slate-50 border-b text-[11px] font-bold text-slate-500 uppercase">
                             <tr>
                                 <th class="px-6 py-4">納品先 / 地域</th>
                                 <th class="px-6 py-4">型番 / シリアル</th>
                                 <th class="px-6 py-4">管理IP</th>
-                                <th class="px-6 py-4">FW Ver / 更新情報</th>
+                                <th class="px-6 py-4">FW Ver / 最新情報</th>
                                 <th class="px-6 py-4">自動FW</th>
-                                <th class="px-6 py-4">ログインPW</th>
+                                <th class="px-6 py-4">PW</th>
                                 <th class="px-6 py-4">関連システム</th>
                                 <th class="px-6 py-4 text-center">操作</th>
                             </tr>
@@ -128,11 +167,10 @@
 
             <div id="content-register" class="hidden">
                 <div class="max-w-4xl mx-auto bg-white p-8 rounded-3xl shadow-xl border">
-                    <h2 id="form-title" class="text-2xl font-bold mb-8 border-l-4 border-red-600 pl-4">機器情報の登録</h2>
+                    <h2 id="form-title" class="text-2xl font-bold mb-8 border-l-4 border-red-600 pl-4 text-slate-800">機器情報の登録</h2>
                     <input type="hidden" id="edit-id" value="">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div><label class="text-sm font-bold text-slate-700">納品先名 <span class="text-red-500">*</span></label><input type="text" id="reg-customer" class="w-full border rounded-xl p-3 focus:ring-2 focus:ring-red-500 outline-none mt-1" placeholder="例: 株式会社サンプル"></div>
-                        
                         <div>
                             <label class="text-sm font-bold text-slate-700">地域</label>
                             <input list="region-options" id="reg-region" class="w-full border rounded-xl p-3 mt-1 outline-none focus:ring-2 focus:ring-red-500" placeholder="選択するか入力">
@@ -143,12 +181,10 @@
                             <input list="model-options" id="reg-model" class="w-full border rounded-xl p-3 mt-1 outline-none focus:ring-2 focus:ring-red-500" placeholder="選択するか入力">
                             <datalist id="model-options"></datalist>
                         </div>
-                        
                         <div><label class="text-sm font-bold text-slate-700">シリアルナンバー</label><input type="text" id="reg-serial" class="w-full border rounded-xl p-3 mt-1 outline-none focus:ring-2 focus:ring-red-500" placeholder="例: FGT60FTK20001234"></div>
                         <div><label class="text-sm font-bold text-slate-700">管理IPアドレス</label><input type="text" id="reg-ip" class="w-full border rounded-xl p-3 mt-1 outline-none focus:ring-2 focus:ring-red-500" placeholder="例: 192.168.1.99"></div>
                         <div><label class="text-sm font-bold text-slate-700">FWバージョン</label><input type="text" id="reg-fw-ver" class="w-full border rounded-xl p-3 mt-1 outline-none focus:ring-2 focus:ring-red-500" placeholder="例: 7.2.4"></div>
                         <div><label class="text-sm font-bold text-slate-700">FW最終更新日</label><input type="date" id="reg-fw-date" class="w-full border rounded-xl p-3 mt-1 outline-none focus:ring-2 focus:ring-red-500"></div>
-                        
                         <div>
                             <label class="text-sm font-bold text-slate-700">自動ファームウェア設定</label>
                             <select id="reg-autofw" class="w-full border rounded-xl p-3 mt-1 outline-none focus:ring-2 focus:ring-red-500 bg-white">
@@ -157,18 +193,14 @@
                                 <option value="ON">ON (自動更新)</option>
                             </select>
                         </div>
-
                         <div><label class="text-sm font-bold text-slate-700">機器ログインPW</label><input type="text" id="reg-pw" class="w-full border rounded-xl p-3 mt-1 outline-none focus:ring-2 focus:ring-red-500" placeholder="管理者パスワード"></div>
-                        
                         <div class="md:col-span-2">
                             <label class="text-sm font-bold text-slate-700">関連システムタグ</label>
                             <div class="flex gap-2 mt-2">
                                 <select id="reg-sys-select" class="flex-1 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-red-500 bg-white"></select>
                                 <button onclick="addSystemTag()" class="bg-slate-800 text-white px-8 rounded-xl font-bold hover:bg-slate-700 transition-colors">タグ追加</button>
                             </div>
-                            <div id="selected-systems" class="flex flex-wrap p-4 bg-slate-50 rounded-2xl border border-dashed mt-3 min-h-[70px] items-center text-sm text-slate-400">
-                                追加されたシステムタグがここに表示されます
-                            </div>
+                            <div id="selected-systems" class="flex flex-wrap p-4 bg-slate-50 rounded-2xl border border-dashed mt-3 min-h-[70px] items-center text-sm text-slate-400">タグ未選択</div>
                         </div>
                     </div>
                     <div class="mt-10 flex justify-end space-x-4">
@@ -179,35 +211,23 @@
             </div>
 
             <div id="content-news" class="hidden">
-                <div id="deep-scan-status" class="mb-4 bg-blue-50 text-blue-700 p-3 rounded-xl border border-blue-200 text-sm font-bold hidden flex items-center">
-                    <i class="fas fa-satellite-dish scanning-pulse mr-2 text-lg"></i>
-                    <span>ディープスキャン実行中：リンク先の詳細ページを解析し、最新FWと脆弱性バージョンを自動抽出しています...</span>
+                <div id="deep-scan-status" class="mb-6 bg-blue-50 text-blue-700 p-4 rounded-2xl border border-blue-200 text-sm font-bold hidden flex items-center shadow-sm">
+                    <i class="fas fa-satellite-dish scanning-pulse mr-3 text-xl"></i>
+                    <span>ディープスキャン実行中：最新脆弱性情報を解析しています...</span>
                 </div>
-
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="lg:col-span-2">
-                        <h3 class="font-bold text-lg mb-4 text-slate-700 flex items-center"><i class="fas fa-rss text-orange-500 mr-2"></i>FortiGuard 最新ニュース（自動取得）</h3>
+                        <h3 class="font-bold text-lg mb-4 text-slate-700 flex items-center"><i class="fas fa-rss text-orange-500 mr-2"></i>FortiGuard 最新ニュース</h3>
                         <div id="news-container" class="space-y-4"></div>
                     </div>
-                    
                     <div class="space-y-6">
-                        <div class="bg-white p-6 rounded-2xl border-2 border-blue-200 shadow-md">
-                            <h3 class="text-blue-700 font-bold mb-3 border-b border-blue-200 pb-2 flex items-center"><i class="fas fa-level-up-alt mr-2 text-xl"></i>各OS系統の最新ファーム</h3>
-                            <div class="grid grid-cols-1 gap-2" id="latest-fw-display">
-                                <span class="text-xs text-slate-400">取得中...</span>
-                            </div>
+                        <div class="bg-white p-6 rounded-2xl border-2 border-blue-200 shadow-sm">
+                            <h3 class="text-blue-700 font-bold mb-3 border-b border-blue-200 pb-2 flex items-center"><i class="fas fa-level-up-alt mr-2"></i>OS系統別最新FW</h3>
+                            <div id="latest-fw-display" class="grid grid-cols-1 gap-2"></div>
                         </div>
-
-                        <div class="bg-white p-6 rounded-2xl border-2 border-orange-200 shadow-md">
-                            <h3 class="text-orange-700 font-bold mb-3 border-b border-orange-200 pb-2 flex items-center"><i class="fas fa-robot mr-2 text-xl"></i>AI自動抽出バージョン</h3>
-                            <div class="flex flex-wrap gap-2" id="auto-vuln-list-display">
-                                <span class="text-xs text-slate-400">取得中...</span>
-                            </div>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-2xl border-2 border-red-200 shadow-md">
-                            <h3 class="text-red-700 font-bold mb-3 border-b border-red-200 pb-2 flex items-center"><i class="fas fa-biohazard mr-2 text-xl"></i>確定要注意バージョン(手動)</h3>
-                            <div class="space-y-2" id="vuln-list-display"></div>
+                        <div class="bg-white p-6 rounded-2xl border-2 border-red-200 shadow-sm">
+                            <h3 class="text-red-700 font-bold mb-3 border-b border-red-200 pb-2 flex items-center"><i class="fas fa-biohazard mr-2"></i>要注意バージョン</h3>
+                            <div id="vuln-list-display" class="space-y-2"></div>
                         </div>
                     </div>
                 </div>
@@ -216,54 +236,44 @@
             <div id="content-settings" class="hidden">
                 <div class="max-w-6xl mx-auto bg-white p-8 rounded-3xl border shadow-xl">
                     <h2 class="text-2xl font-bold mb-8 border-l-4 border-slate-800 pl-4">システム設定マスター</h2>
-                    
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                         <div class="bg-slate-50 p-4 rounded-xl border">
-                            <h3 class="font-bold mb-4 flex items-center text-slate-700 text-sm"><i class="fas fa-map-marker-alt mr-2 text-green-600"></i>地域マスタ</h3>
-                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-region" class="flex-1 border rounded-lg p-2 text-xs outline-none" placeholder="追加する地域"><button onclick="addMaster('region')" class="bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-slate-700">追加</button></div>
-                            <div id="settings-region-list" class="space-y-1 max-h-40 overflow-y-auto"></div>
+                            <h3 class="font-bold mb-4 text-xs uppercase text-slate-500">地域マスタ</h3>
+                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-region" class="flex-1 border rounded-lg p-2 text-xs outline-none" placeholder="追加"><button onclick="addMaster('region')" class="bg-slate-800 text-white px-3 py-1 rounded-lg text-xs font-bold">追加</button></div>
+                            <div id="settings-region-list" class="space-y-1 max-h-32 overflow-y-auto"></div>
                         </div>
                         <div class="bg-slate-50 p-4 rounded-xl border">
-                            <h3 class="font-bold mb-4 flex items-center text-slate-700 text-sm"><i class="fas fa-microchip mr-2 text-blue-600"></i>型番マスタ</h3>
-                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-model" class="flex-1 border rounded-lg p-2 text-xs outline-none" placeholder="追加する型番"><button onclick="addMaster('model')" class="bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-slate-700">追加</button></div>
-                            <div id="settings-model-list" class="space-y-1 max-h-40 overflow-y-auto"></div>
+                            <h3 class="font-bold mb-4 text-xs uppercase text-slate-500">型番マスタ</h3>
+                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-model" class="flex-1 border rounded-lg p-2 text-xs outline-none" placeholder="追加"><button onclick="addMaster('model')" class="bg-slate-800 text-white px-3 py-1 rounded-lg text-xs font-bold">追加</button></div>
+                            <div id="settings-model-list" class="space-y-1 max-h-32 overflow-y-auto"></div>
                         </div>
                         <div class="bg-slate-50 p-4 rounded-xl border">
-                            <h3 class="font-bold mb-4 flex items-center text-slate-700 text-sm"><i class="fas fa-tags mr-2 text-purple-600"></i>システム名マスタ</h3>
-                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-sys" class="flex-1 border rounded-lg p-2 text-xs outline-none" placeholder="追加するシステム"><button onclick="addMaster('system')" class="bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-slate-700">追加</button></div>
-                            <div id="settings-sys-list" class="space-y-1 max-h-40 overflow-y-auto"></div>
+                            <h3 class="font-bold mb-4 text-xs uppercase text-slate-500">システムマスタ</h3>
+                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-sys" class="flex-1 border rounded-lg p-2 text-xs outline-none" placeholder="追加"><button onclick="addMaster('system')" class="bg-slate-800 text-white px-3 py-1 rounded-lg text-xs font-bold">追加</button></div>
+                            <div id="settings-sys-list" class="space-y-1 max-h-32 overflow-y-auto"></div>
                         </div>
-                        <div class="bg-red-50 p-4 rounded-xl border border-red-200">
-                            <h3 class="font-bold mb-4 flex items-center text-red-700 text-sm"><i class="fas fa-exclamation-triangle mr-2"></i>要注意FW(手動)</h3>
-                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-vuln" class="flex-1 border rounded-lg p-2 text-xs outline-none focus:ring-red-500" placeholder="例: 7.2.3"><button onclick="addMaster('vuln')" class="bg-red-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-red-700">追加</button></div>
-                            <div id="settings-vuln-list" class="space-y-1 max-h-40 overflow-y-auto"></div>
+                        <div class="bg-red-50 p-4 rounded-xl border border-red-100">
+                            <h3 class="font-bold mb-4 text-xs uppercase text-red-500">要注意FW(手動)</h3>
+                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-vuln" class="flex-1 border rounded-lg p-2 text-xs outline-none" placeholder="例: 7.2.3"><button onclick="addMaster('vuln')" class="bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-bold">追加</button></div>
+                            <div id="settings-vuln-list" class="space-y-1 max-h-32 overflow-y-auto"></div>
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
-                            <h3 class="font-bold mb-4 flex items-center text-blue-700 text-sm"><i class="fas fa-arrow-alt-circle-up mr-2"></i>最新FWマスタ（手動上書き用）</h3>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 border-t pt-8">
+                        <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                            <h3 class="font-bold mb-4 text-blue-800 text-sm">最新FWマスタ（手動上書き用）</h3>
                             <div class="flex gap-2 mb-4">
-                                <input type="text" id="new-master-latest-branch" class="w-1/3 border rounded-lg p-2 text-xs outline-none focus:ring-blue-500 bg-white" placeholder="系統(例: 7.2)">
-                                <input type="text" id="new-master-latest-ver" class="flex-1 border rounded-lg p-2 text-xs outline-none focus:ring-blue-500 bg-white" placeholder="最新版(例: 7.2.14)">
-                                <button onclick="addLatestFwMaster()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700">登録</button>
+                                <input type="text" id="new-master-latest-branch" class="w-1/3 border rounded-lg p-2 text-xs outline-none bg-white" placeholder="系統(7.2)">
+                                <input type="text" id="new-master-latest-ver" class="flex-1 border rounded-lg p-2 text-xs outline-none bg-white" placeholder="最新版(7.2.14)">
+                                <button onclick="addLatestFwMaster()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold">登録</button>
                             </div>
                             <div id="settings-latest-fw-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto"></div>
                         </div>
-
-                        <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-200 shadow-inner">
-                            <h3 class="font-bold mb-2 flex items-center text-indigo-800 text-sm"><i class="fas fa-users-cog mr-2"></i>ログインユーザー管理</h3>
-                            <p class="text-[10px] text-indigo-600 mb-4 font-bold">※追加したID/PWは全員のログイン画面で有効になります。</p>
+                        <div class="bg-indigo-50 p-6 rounded-2xl border border-indigo-100 shadow-inner">
+                            <h3 class="font-bold mb-4 text-indigo-800 text-sm">ログインユーザー管理</h3>
                             <div class="flex gap-2 mb-4">
-                                <div class="relative w-1/3">
-                                    <span class="absolute inset-y-0 left-0 flex items-center pl-2 text-indigo-400 text-xs"><i class="fas fa-user"></i></span>
-                                    <input type="text" id="new-master-user" class="w-full border rounded-lg py-2 pl-6 pr-2 text-xs outline-none focus:ring-indigo-500 bg-white" placeholder="新ユーザー名">
-                                </div>
-                                <div class="relative flex-1">
-                                    <span class="absolute inset-y-0 left-0 flex items-center pl-2 text-indigo-400 text-xs"><i class="fas fa-lock"></i></span>
-                                    <input type="text" id="new-master-pass" class="w-full border rounded-lg py-2 pl-6 pr-2 text-xs outline-none focus:ring-indigo-500 bg-white" placeholder="新パスワード">
-                                </div>
-                                <button onclick="addMasterUser()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors">追加</button>
+                                <input type="text" id="new-master-user" class="w-1/3 border rounded-lg p-2 text-xs outline-none bg-white" placeholder="ID">
+                                <input type="text" id="new-master-pass" class="flex-1 border rounded-lg p-2 text-xs outline-none bg-white" placeholder="PW">
+                                <button onclick="addMasterUser()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold">追加</button>
                             </div>
                             <div id="settings-user-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto"></div>
                         </div>
@@ -273,11 +283,43 @@
         </div>
     </div>
 
+    <div id="log-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-[150] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden modal-enter">
+            <div class="bg-slate-900 p-6 text-white flex justify-between items-center">
+                <div>
+                    <h3 id="log-modal-title" class="text-xl font-bold">作業履歴管理</h3>
+                    <p id="log-modal-subtitle" class="text-xs text-slate-400 mt-1"></p>
+                </div>
+                <button onclick="closeLogModal()" class="text-slate-400 hover:text-white transition-colors text-2xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <div class="bg-slate-50 p-4 rounded-2xl mb-6 border border-slate-200">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase mb-3">新規履歴の追加</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <select id="log-input-action" class="border rounded-xl p-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500">
+                            <option value="FWアップデート">FWアップデート</option>
+                            <option value="設定変更">設定変更</option>
+                            <option value="ポリシー追加">ポリシー追加</option>
+                            <option value="ライセンス更新">ライセンス更新</option>
+                            <option value="障害対応">障害対応</option>
+                            <option value="その他">その他</option>
+                        </select>
+                        <input type="text" id="log-input-note" class="md:col-span-2 border rounded-xl p-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-red-500" placeholder="作業内容のメモ（例：v7.2.4へ更新）">
+                        <button onclick="addLogEntry()" class="md:col-span-3 bg-slate-800 text-white font-bold py-2.5 rounded-xl hover:bg-slate-700 transition-colors">履歴を保存</button>
+                    </div>
+                </div>
+                <div class="max-h-[400px] overflow-y-auto pr-2">
+                    <div id="log-timeline-container" class="relative border-l-2 border-slate-200 ml-4 space-y-6 pb-4">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Firebase 接続キー
         const firebaseConfig = {
             apiKey: "AIzaSyA1natPUopWd-2SlfOAzJULYiSlJudm2Rs",
             authDomain: "fg-delivery-master.firebaseapp.com",
@@ -293,27 +335,27 @@
         const inventoryCol = collection(db, "inventory");
         const masterDoc = doc(db, "config", "masters");
 
-        // 初期データ＆変数定義
+        // グローバルステート
         window.inventoryData = [];
         window.masterRegions = ["北海道", "東北", "関東", "中部", "近畿", "中国", "四国", "九州", "沖縄"];
         window.masterSystems = ["情報システム部", "営業部", "経理・総務", "基幹システム"];
         window.masterModels = ["FG-40F", "FG-60F", "FG-80F", "FG-100F"];
-        window.masterVuln = ["7.2.0", "7.0.5"]; 
-        window.masterLatestFw = {}; 
-        
-        // ⭐️ デフォルトのログインユーザー（DBに無い場合の初期値）
-        window.masterUsers = [{ user: "admin", pass: "forti2026" }]; 
-        
-        window.autoDetectedVuln = []; 
-        window.autoLatestFw = {}; 
+        window.masterVuln = ["7.2.0", "7.0.5"];
+        window.masterLatestFw = {};
+        window.masterUsers = [{ user: "admin", pass: "forti2026" }];
+        window.autoDetectedVuln = [];
+        window.autoLatestFw = {};
         window.selectedSystems = [];
+        window.currentUser = "";
+        window.activeLogDeviceId = null;
+        window.searchFilterType = null; // 'vuln' or 'update'
+
         const ADMIN_PW = "komayuu28";
         const VIEW_PW = "sigma-sol2012";
-
         let isDbConnected = false;
 
         // ==========================================
-        // STEP 1: ページ読み込みと同時にマスタデータ（ユーザー情報含む）をFirebaseから取得
+        // 初期データ取得 & ログイン
         // ==========================================
         onSnapshot(masterDoc, (docSnap) => {
             if (docSnap.exists()) {
@@ -323,131 +365,234 @@
                 window.masterModels = data.models || window.masterModels;
                 window.masterVuln = data.vuln || window.masterVuln;
                 window.masterLatestFw = data.latestFw || window.masterLatestFw;
-                // ⭐️ DBからユーザー情報を取得
-                window.masterUsers = data.users || window.masterUsers; 
-                
-                // ログイン画面の「接続中」を消す
+                window.masterUsers = data.users || window.masterUsers;
                 isDbConnected = true;
                 const statusMsg = document.getElementById('login-status-msg');
-                if(statusMsg) statusMsg.innerHTML = '<span class="text-green-600"><i class="fas fa-check-circle mr-1"></i>データベース接続完了</span>';
-
-                // ログイン済みの場合は画面も更新する
+                if(statusMsg) statusMsg.innerHTML = '<span class="text-green-600"><i class="fas fa-check-circle mr-1"></i>DB Ready</span>';
+                
                 if(!document.getElementById('main-app').classList.contains('hidden')) {
-                    updateDynamicLists();
-                    renderVulnDisplay();
-                    renderLatestFwMaster();
-                    renderLatestFwDisplay();
-                    renderMasterUserList();
-                    renderTable();
+                    refreshAllUI();
                 }
             } else {
-                // 初回構築時：デフォルトの全マスタをFirebaseに書き込む
                 saveAllMastersToFirebase();
             }
         });
 
-        // ==========================================
-        // STEP 2: ログイン処理（取得したユーザーリストと照合）
-        // ==========================================
         window.attemptLogin = () => {
-            if(!isDbConnected) {
-                alert("データベースと同期中です。数秒待ってから再度お試しください。");
-                return;
-            }
-
+            if(!isDbConnected) return alert("同期中...");
             const inputUser = document.getElementById('login-user').value.trim();
             const inputPass = document.getElementById('login-pass').value.trim();
-            
-            // ⭐️ ユーザーリストから一致するものを探す
-            const validUser = window.masterUsers.find(u => u.user === inputUser && u.pass === inputPass);
-            
-            if(validUser) {
-                // ログイン成功
+            const valid = window.masterUsers.find(u => u.user === inputUser && u.pass === inputPass);
+            if(valid) {
+                window.currentUser = inputUser;
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
                 document.getElementById('display-username').innerText = inputUser;
-                
-                // ログイン後に初めてメインの機器データ取得とニューススキャンを開始
-                initApplicationData();
+                initApp();
             } else {
-                // ログイン失敗
                 document.getElementById('login-error').classList.remove('hidden');
             }
         };
 
-        // メインシステム初期化処理（ログイン後に実行）
-        function initApplicationData() {
-            // インベントリのリアルタイム同期を開始
+        function initApp() {
             onSnapshot(inventoryCol, (snapshot) => {
                 window.inventoryData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderTable();
+                refreshAllUI();
             });
-            
+            fetchNews();
+        }
+
+        function refreshAllUI() {
             updateDynamicLists();
+            renderTable();
             renderVulnDisplay();
             renderLatestFwMaster();
             renderLatestFwDisplay();
             renderMasterLists();
             renderMasterUserList();
-            fetchNews();
+            calculateDashboard(); // ダッシュボード更新
         }
 
-        // 汎用マスタ保存関数
-        const saveAllMastersToFirebase = async () => {
-            await setDoc(masterDoc, { 
-                regions: window.masterRegions, 
-                systems: window.masterSystems, 
-                models: window.masterModels, 
-                vuln: window.masterVuln, 
-                latestFw: window.masterLatestFw,
-                users: window.masterUsers // ユーザー情報も一緒に保存
+        // ==========================================
+        // 3. ダッシュボード計算ロジック
+        // ==========================================
+        function calculateDashboard() {
+            const total = window.inventoryData.length;
+            let vulnCnt = 0;
+            let pendingCnt = 0;
+            let autoOnCnt = 0;
+
+            window.inventoryData.forEach(item => {
+                // 脆弱性カウント
+                const isVuln = window.masterVuln.includes(item.fw_version) || window.autoDetectedVuln.includes(item.fw_version);
+                if(isVuln) vulnCnt++;
+
+                // アップデート待ちカウント
+                const fwMatch = (item.fw_version || "").match(/^(\d+\.\d+)\.(\d+)$/);
+                if(fwMatch) {
+                    const branch = fwMatch[1];
+                    const patch = parseInt(fwMatch[2]);
+                    const latestStr = window.masterLatestFw[branch] || window.autoLatestFw[branch];
+                    if(latestStr) {
+                        const latestMatch = latestStr.match(/^(\d+\.\d+)\.(\d+)$/);
+                        if(latestMatch && parseInt(latestMatch[2]) > patch) pendingCnt++;
+                    }
+                }
+
+                // 自動FW率
+                if(item.auto_fw === "ON") autoOnCnt++;
             });
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-vuln').innerText = vulnCnt;
+            document.getElementById('stat-pending').innerText = pendingCnt;
+            document.getElementById('stat-auto-rate').innerText = total > 0 ? Math.round((autoOnCnt / total) * 100) + "%" : "0%";
+        }
+
+        window.setSearchFilter = (type) => {
+            window.searchFilterType = type;
+            document.getElementById('clear-filter-btn').classList.remove('hidden');
+            renderTable();
+        };
+
+        window.clearSearchFilter = () => {
+            window.searchFilterType = null;
+            document.getElementById('clear-filter-btn').classList.add('hidden');
+            document.getElementById('search-input').value = "";
+            renderTable();
         };
 
         // ==========================================
-        // ⭐️ 新機能：ログインユーザーの追加・削除
+        // 2. 履歴管理ロジック
         // ==========================================
-        window.addMasterUser = async () => {
-            const u = document.getElementById('new-master-user').value.trim();
-            const p = document.getElementById('new-master-pass').value.trim();
-            if(!u || !p) return alert("ユーザー名とパスワードを入力してください");
-            
-            if(window.masterUsers.find(x => x.user === u)) return alert("そのユーザー名は既に存在します！");
-
-            window.masterUsers.push({ user: u, pass: p });
-            await saveAllMastersToFirebase();
-            
-            document.getElementById('new-master-user').value = "";
-            document.getElementById('new-master-pass').value = "";
-            renderMasterUserList();
-            alert(`ユーザー「${u}」を追加しました。`);
+        window.openLogModal = (deviceId) => {
+            window.activeLogDeviceId = deviceId;
+            const item = window.inventoryData.find(i => i.id === deviceId);
+            document.getElementById('log-modal-title').innerText = `${item.customer} の履歴`;
+            document.getElementById('log-modal-subtitle').innerText = `${item.model} (${item.serial})`;
+            renderTimeline();
+            document.getElementById('log-modal').classList.remove('hidden');
         };
 
-        window.removeMasterUser = async (u) => {
-            if(window.masterUsers.length <= 1) return alert("最低1つのアカウントは残す必要があります！（誰もログインできなくなります）");
-            if(!confirm(`ユーザー「${u}」を本当に削除しますか？\n削除後、このユーザーはログインできなくなります。`)) return;
-            
-            window.masterUsers = window.masterUsers.filter(x => x.user !== u);
-            await saveAllMastersToFirebase();
-            renderMasterUserList();
+        window.closeLogModal = () => {
+            document.getElementById('log-modal').classList.add('hidden');
+            window.activeLogDeviceId = null;
         };
 
-        window.renderMasterUserList = () => {
-            const container = document.getElementById('settings-user-list');
-            container.innerHTML = window.masterUsers.map(u => `
-                <div class="flex justify-between items-center bg-white p-2 border border-indigo-100 rounded-lg text-sm hover:bg-indigo-50 shadow-sm transition-colors">
-                    <div>
-                        <span class="font-bold text-indigo-800"><i class="fas fa-user text-indigo-300 mr-2 text-xs"></i>${u.user}</span>
-                        <span class="text-[10px] text-slate-400 ml-2">PW: ${u.pass.replace(/./g, '*')}</span>
+        window.addLogEntry = async () => {
+            const action = document.getElementById('log-input-action').value;
+            const note = document.getElementById('log-input-note').value.trim();
+            if(!note) return alert("内容を入力してください");
+
+            const newLog = {
+                date: new Date().toLocaleString('ja-JP'),
+                user: window.currentUser,
+                action: action,
+                note: note
+            };
+
+            const deviceDoc = doc(db, "inventory", window.activeLogDeviceId);
+            try {
+                await updateDoc(deviceDoc, {
+                    logs: arrayUnion(newLog)
+                });
+                document.getElementById('log-input-note').value = "";
+                renderTimeline(); // 即時反映は snapshot がやってくれるが、配列追加なので手動で再描画を促す
+            } catch (e) { alert("保存失敗: " + e); }
+        };
+
+        function renderTimeline() {
+            const container = document.getElementById('log-timeline-container');
+            const item = window.inventoryData.find(i => i.id === window.activeLogDeviceId);
+            const logs = item.logs || [];
+
+            if(logs.length === 0) {
+                container.innerHTML = '<div class="pl-8 text-slate-400 text-sm">作業履歴はまだありません。</div>';
+                return;
+            }
+
+            container.innerHTML = logs.slice().reverse().map(log => `
+                <div class="relative pl-8">
+                    <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-slate-900 border-4 border-white shadow-sm"></div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${log.date}</span>
+                            <span class="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-bold"><i class="fas fa-user mr-1"></i>${log.user}</span>
+                        </div>
+                        <div class="font-bold text-slate-800 text-sm mb-1">${log.action}</div>
+                        <p class="text-xs text-slate-600 leading-relaxed">${log.note}</p>
                     </div>
-                    <button onclick="removeMasterUser('${u.user}')" class="text-indigo-300 hover:text-red-500 transition-colors" title="削除"><i class="fas fa-trash-alt"></i></button>
                 </div>
             `).join('');
+        }
+
+        // ==========================================
+        // これまでの基本機能
+        // ==========================================
+        window.renderTable = () => {
+            const term = document.getElementById('search-input').value.toLowerCase();
+            const tbody = document.getElementById('inventory-tbody');
+            
+            let filtered = window.inventoryData.filter(i => 
+                (i.customer || "").toLowerCase().includes(term) || 
+                (i.fw_version || "").toLowerCase().includes(term) || 
+                (i.model || "").toLowerCase().includes(term) ||
+                (i.serial || "").toLowerCase().includes(term)
+            );
+
+            // ダッシュボードからのフィルタ適用
+            if(window.searchFilterType === 'vuln') {
+                filtered = filtered.filter(item => window.masterVuln.includes(item.fw_version) || window.autoDetectedVuln.includes(item.fw_version));
+            } else if(window.searchFilterType === 'update') {
+                filtered = filtered.filter(item => {
+                    const fwMatch = (item.fw_version || "").match(/^(\d+\.\d+)\.(\d+)$/);
+                    if(!fwMatch) return false;
+                    const latestStr = window.masterLatestFw[fwMatch[1]] || window.autoLatestFw[fwMatch[1]];
+                    if(!latestStr) return false;
+                    const latestMatch = latestStr.match(/^(\d+\.\d+)\.(\d+)$/);
+                    return latestMatch && parseInt(latestMatch[2]) > parseInt(fwMatch[2]);
+                });
+            }
+            
+            tbody.innerHTML = filtered.map(item => {
+                const isVuln = window.masterVuln.includes(item.fw_version) || window.autoDetectedVuln.includes(item.fw_version);
+                let rowClass = "hover:bg-slate-50 transition-colors";
+                let fwClass = "text-green-700 font-bold";
+                if (isVuln) {
+                    rowClass = item.auto_fw === "ON" ? "auto-alert-row" : "alert-row";
+                    fwClass = "text-red-600 font-bold bg-white px-2 py-1 rounded border";
+                }
+                
+                let fwUpdateBadge = '';
+                const fwMatch = (item.fw_version || "").match(/^(\d+\.\d+)\.(\d+)$/);
+                if(fwMatch) {
+                    const branch = fwMatch[1];
+                    const latestStr = window.masterLatestFw[branch] || window.autoLatestFw[branch];
+                    if(latestStr && parseInt(latestStr.split('.')[2]) > parseInt(fwMatch[2])) {
+                        fwUpdateBadge = `<div class="text-[9px] text-blue-600 font-bold mt-1.5 bg-blue-50 px-2 py-0.5 rounded border border-blue-100"><i class="fas fa-arrow-circle-up mr-1"></i>新版 ${latestStr} あり</div>`;
+                    }
+                }
+
+                return `
+                <tr class="${rowClass} group">
+                    <td class="px-6 py-5"><div class="font-bold text-slate-800">${item.customer}</div><div class="text-[10px] text-slate-500">${item.region || '-'}</div></td>
+                    <td class="px-6 py-5"><div class="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded inline-block border">${item.model || '-'}</div><div class="text-[10px] text-slate-400 mt-1 font-mono">${item.serial || '-'}</div></td>
+                    <td class="px-6 py-5 text-xs font-mono">${item.ip || '-'}</td>
+                    <td class="px-6 py-5"><div class="text-xs ${fwClass}">${item.fw_version || '-'}</div>${fwUpdateBadge}</td>
+                    <td class="px-6 py-5"><span class="text-[10px] ${item.auto_fw === 'ON' ? 'text-blue-600 font-bold' : 'text-slate-400'}">${item.auto_fw || '未設定'}</span></td>
+                    <td class="px-6 py-5"><button onclick="showPw('${item.pw || ''}')" class="text-[10px] border px-2 py-1 rounded bg-white shadow-sm hover:bg-slate-50">表示</button></td>
+                    <td class="px-6 py-5"><div class="flex flex-wrap">${(item.systems || []).map(s => `<span class="system-tag">${s}</span>`).join('')}</div></td>
+                    <td class="px-6 py-5 text-center">
+                        <div class="action-btns flex justify-center space-x-1">
+                            <button onclick="openLogModal('${item.id}')" class="p-2 text-slate-500 hover:text-slate-900" title="履歴"><i class="fas fa-history"></i></button>
+                            <button onclick="editData('${item.id}')" class="p-2 text-blue-500 hover:text-blue-700" title="編集"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteData('${item.id}')" class="p-2 text-red-400 hover:text-red-700" title="削除"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
         };
 
-        // ------------------------------------------
-        // 以下、これまでの機能（変更なし）
-        // ------------------------------------------
         window.saveData = async () => {
             const id = document.getElementById('edit-id').value;
             const newItem = {
@@ -463,150 +608,16 @@
                 systems: [...window.selectedSystems],
                 updatedAt: new Date()
             };
-
-            if(!newItem.customer) return alert("納品先名は必ず入力してください");
-
+            if(!newItem.customer) return alert("顧客名必須");
             try {
                 if(id) await updateDoc(doc(db, "inventory", id), newItem);
-                else await addDoc(inventoryCol, newItem);
-                alert("クラウドへ保存が完了しました！");
-                cancelEdit(); 
-                switchTab('list');
-            } catch (e) { alert("保存に失敗しました: " + e); }
+                else await addDoc(inventoryCol, { ...newItem, logs: [] });
+                alert("クラウド同期完了");
+                cancelEdit(); switchTab('list');
+            } catch (e) { alert(e); }
         };
 
-        window.deleteData = async (id) => {
-            if(confirm("このデータを完全に削除してもよろしいですか？")) {
-                await deleteDoc(doc(db, "inventory", id));
-            }
-        };
-
-        window.renderTable = () => {
-            const term = document.getElementById('search-input').value.toLowerCase();
-            const tbody = document.getElementById('inventory-tbody');
-            const filtered = window.inventoryData.filter(i => 
-                (i.customer || "").toLowerCase().includes(term) || 
-                (i.fw_version || "").toLowerCase().includes(term) || 
-                (i.model || "").toLowerCase().includes(term) ||
-                (i.serial || "").toLowerCase().includes(term)
-            );
-            
-            document.getElementById('count-total').innerText = filtered.length;
-            
-            tbody.innerHTML = filtered.map(item => {
-                const isMasterVuln = window.masterVuln.includes(item.fw_version);
-                const isAutoVuln = window.autoDetectedVuln.includes(item.fw_version);
-                
-                let rowClass = "hover:bg-slate-50 transition-colors";
-                let fwClass = "text-green-700 font-bold";
-                let alertIcon = "";
-                
-                if (isMasterVuln) {
-                    rowClass = "alert-row";
-                    fwClass = "text-red-600 font-bold bg-red-100 px-2 py-1 rounded border border-red-200";
-                    alertIcon = '<i class="fas fa-exclamation-triangle text-red-500 mr-1" title="手動確定済みの危険バージョン"></i>';
-                } else if (isAutoVuln) {
-                    rowClass = "auto-alert-row";
-                    fwClass = "text-orange-600 font-bold bg-orange-100 px-2 py-1 rounded border border-orange-200";
-                    alertIcon = '<i class="fas fa-robot text-orange-500 mr-1" title="ディープスキャンで検知された危険バージョン"></i>';
-                }
-                
-                let autoFwBadge = '<span class="text-slate-400 text-xs">未設定</span>';
-                if(item.auto_fw === "ON") autoFwBadge = '<span class="bg-blue-100 text-blue-700 border border-blue-200 px-2 py-1 rounded text-[10px] font-bold">ON (自動)</span>';
-                if(item.auto_fw === "OFF") autoFwBadge = '<span class="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded text-[10px] font-bold">OFF (手動)</span>';
-
-                let fwUpdateBadge = '';
-                const fwMatch = (item.fw_version || "").match(/^(\d+\.\d+)\.(\d+)$/);
-                if(fwMatch) {
-                    const branch = fwMatch[1];
-                    const patch = parseInt(fwMatch[2]);
-                    const latestStr = (window.masterLatestFw && window.masterLatestFw[branch]) ? window.masterLatestFw[branch] : window.autoLatestFw[branch];
-                    
-                    if(latestStr) {
-                        const latestMatch = latestStr.match(/^(\d+\.\d+)\.(\d+)$/);
-                        if(latestMatch && parseInt(latestMatch[2]) > patch) {
-                            fwUpdateBadge = `<div class="text-[10px] text-blue-600 font-bold mt-1.5 bg-blue-50 px-2 py-0.5 rounded inline-block border border-blue-200 shadow-sm" title="最新バージョン ${latestStr} がリリースされています"><i class="fas fa-arrow-circle-up mr-1"></i>最新 ${latestStr} あり</div>`;
-                        }
-                    }
-                }
-
-                return `
-                <tr class="${rowClass} group">
-                    <td class="px-6 py-5"><div class="font-bold text-slate-800">${item.customer}</div><div class="text-[10px] text-slate-500"><i class="fas fa-map-marker-alt mr-1"></i>${item.region || '未登録'}</div></td>
-                    <td class="px-6 py-5"><div class="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded inline-block border">${item.model || '-'}</div><div class="text-[10px] text-slate-500 mt-1 font-mono">${item.serial || '-'}</div></td>
-                    <td class="px-6 py-5 text-xs font-mono">${item.ip || '-'}</td>
-                    <td class="px-6 py-5">
-                        <div class="text-xs ${fwClass} inline-block">${alertIcon}${item.fw_version || '-'}</div><br>
-                        ${fwUpdateBadge}
-                        <div class="text-[9px] text-slate-400 mt-1">${item.fw_updated_at || ''}</div>
-                    </td>
-                    <td class="px-6 py-5">${autoFwBadge}</td>
-                    <td class="px-6 py-5"><button onclick="showPw('${item.pw || ''}')" class="text-[10px] bg-white hover:bg-slate-50 py-1.5 px-3 rounded-md border shadow-sm transition-all"><i class="fas fa-key mr-1 text-slate-400"></i>表示</button></td>
-                    <td class="px-6 py-5"><div class="flex flex-wrap">${(item.systems || []).map(s => `<span class="system-tag">${s}</span>`).join('')}</div></td>
-                    <td class="px-6 py-5 text-center">
-                        <div class="action-btns flex justify-center space-x-2">
-                            <button onclick="editData('${item.id}')" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="編集"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteData('${item.id}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="削除"><i class="fas fa-trash-alt"></i></button>
-                        </div>
-                    </td>
-                </tr>`;
-            }).join('');
-        };
-
-        window.addMaster = async (type) => {
-            const inputId = `new-master-${type}`;
-            const val = document.getElementById(inputId).value.trim();
-            if(!val) return;
-            
-            if(type === 'region') window.masterRegions.push(val);
-            else if(type === 'system') window.masterSystems.push(val);
-            else if(type === 'model') window.masterModels.push(val);
-            else if(type === 'vuln') window.masterVuln.push(val);
-            
-            await saveAllMastersToFirebase();
-            document.getElementById(inputId).value = "";
-            renderMasterLists();
-        };
-
-        window.removeMaster = async (type, val) => {
-            if(!confirm(`「${val}」をマスタから削除しますか？`)) return;
-            
-            if(type === 'region') window.masterRegions = window.masterRegions.filter(x => x !== val);
-            else if(type === 'system') window.masterSystems = window.masterSystems.filter(x => x !== val);
-            else if(type === 'model') window.masterModels = window.masterModels.filter(x => x !== val);
-            else if(type === 'vuln') window.masterVuln = window.masterVuln.filter(x => x !== val);
-            
-            await saveAllMastersToFirebase();
-            renderMasterLists();
-        };
-
-        window.addLatestFwMaster = async () => {
-            const branch = document.getElementById('new-master-latest-branch').value.trim();
-            const ver = document.getElementById('new-master-latest-ver').value.trim();
-            if(!branch || !ver) return;
-            if(!window.masterLatestFw) window.masterLatestFw = {};
-            window.masterLatestFw[branch] = ver;
-            await saveAllMastersToFirebase();
-            document.getElementById('new-master-latest-branch').value = "";
-            document.getElementById('new-master-latest-ver').value = "";
-            renderLatestFwMaster(); renderLatestFwDisplay(); renderTable();
-        };
-
-        window.removeLatestFwMaster = async (branch) => {
-            if(!confirm(`系統「${branch}」の最新FW設定を削除しますか？`)) return;
-            delete window.masterLatestFw[branch];
-            await saveAllMastersToFirebase();
-            renderLatestFwMaster(); renderLatestFwDisplay(); renderTable();
-        };
-
-        window.switchTab = (tab) => {
-            ['list', 'register', 'news', 'settings'].forEach(t => {
-                document.getElementById(`content-${t}`).classList.add('hidden');
-                document.getElementById(`tab-${t}`).classList.remove('tab-active');
-            });
-            document.getElementById(`content-${tab}`).classList.remove('hidden');
-            document.getElementById(`tab-${tab}`).classList.add('tab-active');
-        };
+        window.deleteData = async (id) => { if(confirm("削除しますか？")) await deleteDoc(doc(db, "inventory", id)); };
 
         window.editData = (id) => {
             const item = window.inventoryData.find(i => i.id === id);
@@ -622,7 +633,7 @@
             document.getElementById('reg-pw').value = item.pw || "";
             window.selectedSystems = [...(item.systems || [])];
             updateSystemTags();
-            document.getElementById('form-title').innerHTML = "機器情報の編集";
+            document.getElementById('form-title').innerText = "機器情報の編集";
             document.getElementById('cancel-edit-btn').classList.remove('hidden');
             switchTab('register');
         };
@@ -632,170 +643,135 @@
             ['reg-customer','reg-region','reg-model','reg-serial','reg-ip','reg-fw-ver','reg-fw-date','reg-pw'].forEach(id => document.getElementById(id).value = "");
             document.getElementById('reg-autofw').value = "未設定";
             window.selectedSystems = []; updateSystemTags();
-            document.getElementById('form-title').innerHTML = "機器情報の登録";
+            document.getElementById('form-title').innerText = "機器情報の登録";
             document.getElementById('cancel-edit-btn').classList.add('hidden');
         };
 
-        window.showPw = (pw) => { 
-            if(!pw) { alert("パスワードは登録されていません"); return; }
-            if(prompt("閲覧用パスワードを入力してください") === VIEW_PW) alert("パスワード: " + pw); 
-            else alert("パスワードが違います"); 
+        // マスタ管理
+        const saveAllMastersToFirebase = async () => {
+            await setDoc(masterDoc, { 
+                regions: window.masterRegions, systems: window.masterSystems, models: window.masterModels, 
+                vuln: window.masterVuln, latestFw: window.masterLatestFw, users: window.masterUsers 
+            });
+        };
+        window.addMaster = async (type) => {
+            const val = document.getElementById(`new-master-${type}`).value.trim();
+            if(!val) return;
+            if(type==='region') window.masterRegions.push(val);
+            else if(type==='system') window.masterSystems.push(val);
+            else if(type==='model') window.masterModels.push(val);
+            else if(type==='vuln') window.masterVuln.push(val);
+            await saveAllMastersToFirebase();
+            document.getElementById(`new-master-${type}`).value = "";
+        };
+        window.removeMaster = async (type, val) => {
+            if(!confirm(`削除: ${val}`)) return;
+            if(type==='region') window.masterRegions = window.masterRegions.filter(x => x !== val);
+            else if(type==='system') window.masterSystems = window.masterSystems.filter(x => x !== val);
+            else if(type==='model') window.masterModels = window.masterModels.filter(x => x !== val);
+            else if(type==='vuln') window.masterVuln = window.masterVuln.filter(x => x !== val);
+            await saveAllMastersToFirebase();
         };
 
+        window.addMasterUser = async () => {
+            const u = document.getElementById('new-master-user').value.trim();
+            const p = document.getElementById('new-master-pass').value.trim();
+            if(!u || !p) return;
+            window.masterUsers.push({ user: u, pass: p });
+            await saveAllMastersToFirebase();
+            document.getElementById('new-master-user').value = ""; document.getElementById('new-master-pass').value = "";
+        };
+
+        window.addLatestFwMaster = async () => {
+            const branch = document.getElementById('new-master-latest-branch').value.trim();
+            const ver = document.getElementById('new-master-latest-ver').value.trim();
+            if(!branch || !ver) return;
+            window.masterLatestFw[branch] = ver;
+            await saveAllMastersToFirebase();
+            document.getElementById('new-master-latest-branch').value = ""; document.getElementById('new-master-latest-ver').value = "";
+        };
+
+        // 補助UI
+        window.switchTab = (tab) => {
+            ['list', 'register', 'news', 'settings'].forEach(t => {
+                document.getElementById(`content-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('tab-active');
+            });
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('tab-active');
+        };
+        window.showPw = (pw) => { 
+            if(!pw) return alert("未登録");
+            if(prompt("閲覧PW") === VIEW_PW) alert("PW: " + pw); 
+        };
         window.addSystemTag = () => {
             const v = document.getElementById('reg-sys-select').value;
             if(v && !window.selectedSystems.includes(v)) { window.selectedSystems.push(v); updateSystemTags(); }
         };
         window.updateSystemTags = () => {
             const container = document.getElementById('selected-systems');
-            if(window.selectedSystems.length === 0) container.innerHTML = "追加されたシステムタグがここに表示されます";
-            else container.innerHTML = window.selectedSystems.map(s => `<span class="system-tag bg-slate-100 border-slate-300 text-slate-700 py-1 px-3 text-sm">${s} <i class="fas fa-times-circle ml-2 cursor-pointer text-slate-400 hover:text-red-500" onclick="removeTag('${s}')"></i></span>`).join('');
+            if(window.selectedSystems.length === 0) container.innerHTML = "タグ未選択";
+            else container.innerHTML = window.selectedSystems.map(s => `<span class="system-tag bg-slate-200 text-slate-700">${s} <i class="fas fa-times-circle ml-2 cursor-pointer" onclick="removeTag('${s}')"></i></span>`).join('');
         };
         window.removeTag = (s) => { window.selectedSystems = window.selectedSystems.filter(x => x !== s); updateSystemTags(); };
-
         window.updateDynamicLists = () => {
             document.getElementById('region-options').innerHTML = window.masterRegions.map(r => `<option value="${r}">`).join('');
             document.getElementById('model-options').innerHTML = window.masterModels.map(m => `<option value="${m}">`).join('');
             document.getElementById('reg-sys-select').innerHTML = '<option value="">システムを選択...</option>' + window.masterSystems.map(s => `<option value="${s}">${s}</option>`).join('');
         };
-
         window.renderMasterLists = () => {
-            const createList = (arr, type) => arr.map(item => `<div class="flex justify-between items-center bg-white p-2 border rounded-lg text-sm mb-1 hover:bg-slate-50 shadow-sm"><span>${item}</span><button onclick="removeMaster('${type}', '${item}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button></div>`).join('');
-            document.getElementById('settings-region-list').innerHTML = createList(window.masterRegions, 'region');
-            document.getElementById('settings-sys-list').innerHTML = createList(window.masterSystems, 'system');
-            document.getElementById('settings-model-list').innerHTML = createList(window.masterModels, 'model');
-            document.getElementById('settings-vuln-list').innerHTML = createList(window.masterVuln, 'vuln');
+            const draw = (arr, type) => arr.map(item => `<div class="flex justify-between items-center bg-white p-2 border rounded-lg text-xs mb-1"><span>${item}</span><button onclick="removeMaster('${type}', '${item}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button></div>`).join('');
+            document.getElementById('settings-region-list').innerHTML = draw(window.masterRegions, 'region');
+            document.getElementById('settings-sys-list').innerHTML = draw(window.masterSystems, 'system');
+            document.getElementById('settings-model-list').innerHTML = draw(window.masterModels, 'model');
+            document.getElementById('settings-vuln-list').innerHTML = draw(window.masterVuln, 'vuln');
         };
-
+        window.renderMasterUserList = () => {
+            document.getElementById('settings-user-list').innerHTML = window.masterUsers.map(u => `<div class="bg-white p-2 border rounded-lg text-xs flex justify-between items-center"><span><b>${u.user}</b> (***)</span><button onclick="removeMasterUser('${u.user}')" class="text-red-300 hover:text-red-600"><i class="fas fa-trash-alt"></i></button></div>`).join('');
+        };
+        window.removeMasterUser = async (u) => { if(window.masterUsers.length > 1) { window.masterUsers = window.masterUsers.filter(x=>x.user!==u); await saveAllMastersToFirebase(); } };
         window.renderLatestFwMaster = () => {
-            const container = document.getElementById('settings-latest-fw-list');
-            const entries = Object.entries(window.masterLatestFw || {});
-            container.innerHTML = entries.map(([branch, ver]) => 
-                `<div class="flex justify-between items-center bg-white p-2 border rounded-lg text-sm hover:bg-slate-50 shadow-sm"><span class="font-bold text-slate-700">${branch}.x <i class="fas fa-arrow-right text-slate-400 text-[10px] mx-1"></i> <span class="text-blue-600">${ver}</span></span><button onclick="removeLatestFwMaster('${branch}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button></div>`
-            ).join('');
+            document.getElementById('settings-latest-fw-list').innerHTML = Object.entries(window.masterLatestFw).map(([b,v])=>`<div class="bg-white p-2 border rounded-lg text-xs flex justify-between items-center"><span>${b}.x → ${v}</span><button onclick="removeLatestFwMaster('${b}')" class="text-red-300"><i class="fas fa-trash-alt"></i></button></div>`).join('');
         };
-
+        window.removeLatestFwMaster = async (b) => { delete window.masterLatestFw[b]; await saveAllMastersToFirebase(); };
         window.renderVulnDisplay = () => {
-            const container = document.getElementById('vuln-list-display');
-            if(window.masterVuln.length === 0) container.innerHTML = '<div class="text-xs text-slate-500">現在手動登録されている要注意バージョンはありません。</div>';
-            else container.innerHTML = window.masterVuln.map(v => `<div class="p-3 vulnerable-badge rounded-lg flex items-center shadow-sm"><i class="fas fa-skull-crossbones mr-3 opacity-70 text-lg"></i><div><div class="font-extrabold text-sm tracking-widest">v ${v}</div></div></div>`).join('');
+            document.getElementById('vuln-list-display').innerHTML = window.masterVuln.map(v => `<div class="p-3 vulnerable-badge rounded-lg flex items-center text-xs font-bold shadow-sm"><i class="fas fa-skull-crossbones mr-2"></i>v ${v}</div>`).join('');
         };
-
         window.renderLatestFwDisplay = () => {
-            const container = document.getElementById('latest-fw-display');
-            const combined = { ...window.autoLatestFw };
-            Object.keys(window.masterLatestFw || {}).forEach(k => { combined[k] = window.masterLatestFw[k]; });
-            const branches = Object.keys(combined).sort((a, b) => b.localeCompare(a));
-            
-            if(branches.length === 0) { container.innerHTML = '<span class="text-xs text-slate-400">データがありません</span>'; return; }
-
-            container.innerHTML = branches.map(branch => {
-                const ver = combined[branch];
-                const isMaster = !!(window.masterLatestFw && window.masterLatestFw[branch]);
-                const badge = isMaster ? '<span class="text-[9px] bg-blue-600 text-white px-1.5 py-0.5 rounded ml-2 shadow-sm">手動優先</span>' : '<span class="text-[9px] bg-green-500 text-white px-1.5 py-0.5 rounded ml-2 shadow-sm">自動抽出</span>';
-                return `<div class="bg-slate-50 border rounded-lg p-3 flex justify-between items-center shadow-sm"><span class="font-bold text-slate-600 text-sm border-b-2 border-slate-300">${branch}.x</span><div class="flex items-center"><span class="font-mono text-blue-700 font-black text-lg">${ver}</span>${badge}</div></div>`;
-            }).join('');
+            const combined = { ...window.autoLatestFw, ...window.masterLatestFw };
+            document.getElementById('latest-fw-display').innerHTML = Object.keys(combined).sort().reverse().map(b => `<div class="bg-slate-50 border rounded-lg p-3 flex justify-between items-center shadow-sm"><span class="font-bold text-slate-600 text-xs">${b}.x</span><span class="font-mono text-blue-700 font-black">${combined[b]}</span></div>`).join('');
         };
+        window.enterSettings = () => { if(prompt("管理者PW") === ADMIN_PW) { document.getElementById('tab-settings').classList.remove('hidden'); switchTab('settings'); } };
 
-        window.enterSettings = () => { 
-            if(prompt("管理者パスワード") === ADMIN_PW) { 
-                document.getElementById('tab-settings').classList.remove('hidden'); 
-                switchTab('settings'); 
-            } 
-        };
-
-        // ディープスキャン自動化ロジック
         async function fetchNews() {
             const container = document.getElementById('news-container');
             const statusIndicator = document.getElementById('deep-scan-status');
-            if(container.innerHTML !== "" && !container.innerHTML.includes("取得中")) return; 
-            
-            container.innerHTML = '<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin text-3xl mb-3"></i><br>RSSを取得中...</div>';
+            container.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mb-2"></i> スキャン中...</div>';
             statusIndicator.classList.remove('hidden');
-
             try {
                 const rss = "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent("https://www.fortiguard.com/rss/ir.xml");
                 const res = await fetch(rss);
                 const data = await res.json();
+                container.innerHTML = data.items.slice(0, 5).map(i => `<div class="bg-white p-4 rounded-xl border border-l-4 border-l-orange-400"><h4 class="font-bold text-xs mb-1">${i.title}</h4><a href="${i.link}" target="_blank" class="text-[10px] text-blue-500 hover:underline">詳細確認 <i class="fas fa-external-link-alt"></i></a></div>`).join('');
                 
-                let tempVulnSet = new Set();
-                let tempLatestMap = {};
-
-                container.innerHTML = data.items.slice(0, 8).map(i => {
-                    const descText = i.description.replace(/<[^>]*>?/gm, '');
-                    return `
-                    <div class="news-card p-5 rounded-xl border">
-                        <div class="flex items-center mb-2">
-                            <span class="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold">PSIRT</span>
-                            <span class="text-[10px] text-slate-400 ml-2">${i.pubDate ? i.pubDate.split(' ')[0] : ''}</span>
-                        </div>
-                        <h4 class="font-bold text-sm mb-2 text-slate-800">${i.title}</h4>
-                        <p class="text-[11px] text-slate-500 mb-3 line-clamp-2">${descText}</p>
-                        <a href="${i.link}" target="_blank" class="text-[10px] text-blue-600 font-bold hover:underline bg-blue-50 px-3 py-1.5 rounded-lg inline-block">公式詳細（英語） <i class="fas fa-external-link-alt ml-1"></i></a>
-                    </div>`;
-                }).join('');
-
-                const versionRegex = /\b([567]\.\d+\.\d+)\b/g;
-                
-                for(let i = 0; i < Math.min(3, data.items.length); i++) {
-                    const targetLink = data.items[i].link;
-                    if(targetLink.includes("fortiguard.com/psirt")) {
-                        try {
-                            const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(targetLink);
-                            const proxyRes = await fetch(proxyUrl);
-                            const proxyData = await proxyRes.json();
-                            const htmlContent = proxyData.contents;
-
-                            if(htmlContent) {
-                                const matches = htmlContent.match(versionRegex);
-                                if(matches) {
-                                    let branchMap = {};
-                                    matches.forEach(m => {
-                                        const parts = m.split('.');
-                                        if(parts.length >= 3) {
-                                            const branch = `${parts[0]}.${parts[1]}`;
-                                            const patch = parseInt(parts[2]);
-                                            if(!branchMap[branch]) branchMap[branch] = [];
-                                            branchMap[branch].push(patch);
-                                        }
-                                    });
-
-                                    Object.keys(branchMap).forEach(branch => {
-                                        const maxPatch = Math.max(...branchMap[branch]);
-                                        if(!tempLatestMap[branch] || tempLatestMap[branch] < maxPatch) {
-                                            tempLatestMap[branch] = maxPatch;
-                                        }
-                                        branchMap[branch].forEach(p => {
-                                            if(p !== maxPatch) tempVulnSet.add(`${branch}.${p}`);
-                                        });
-                                    });
-                                }
-                            }
-                        } catch(err) { console.warn("スキャン一部失敗", err); }
+                // バージョン抽出（簡易版）
+                const verRegex = /\b([567]\.\d+\.\d+)\b/g;
+                let latestMap = {};
+                for(let i=0; i<3; i++) {
+                    const proxy = "https://api.allorigins.win/get?url=" + encodeURIComponent(data.items[i].link);
+                    const pRes = await fetch(proxy); const pData = await pRes.json();
+                    const matches = pData.contents ? pData.contents.match(verRegex) : null;
+                    if(matches) {
+                        matches.forEach(m => {
+                            const p = m.split('.'); const b = `${p[0]}.${p[1]}`; const v = parseInt(p[2]);
+                            if(!latestMap[b] || v > parseInt(latestMap[b].split('.')[2])) latestMap[b] = m;
+                        });
                     }
                 }
-
-                window.autoDetectedVuln = Array.from(tempVulnSet);
-                window.autoLatestFw = {};
-                Object.keys(tempLatestMap).forEach(branch => {
-                    window.autoLatestFw[branch] = `${branch}.${tempLatestMap[branch]}`;
-                });
-
-                const autoContainer = document.getElementById('auto-vuln-list-display');
-                if(window.autoDetectedVuln.length > 0) {
-                    autoContainer.innerHTML = window.autoDetectedVuln.map(v => `<span class="auto-vuln-badge px-3 py-1 rounded text-xs font-bold tracking-widest shadow-sm">v ${v}</span>`).join('');
-                } else {
-                    autoContainer.innerHTML = '<span class="text-xs text-slate-400">現在検知された脆弱性はありません</span>';
-                }
-
-                renderLatestFwDisplay();
-                renderTable();
+                window.autoLatestFw = latestMap;
+                refreshAllUI();
                 statusIndicator.classList.add('hidden');
-
-            } catch (e) { 
-                container.innerHTML = '<div class="text-red-500 bg-red-50 p-4 rounded-xl border border-red-200">スキャンに失敗しました。</div>'; 
-                statusIndicator.classList.add('hidden');
-            }
+            } catch (e) { statusIndicator.classList.add('hidden'); }
         }
     </script>
 </body>
