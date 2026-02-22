@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FortiGate 納品管理マスター v15 Secure Cloud</title>
+    <title>FortiGate 納品管理マスター v16 Multi-User Cloud</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -24,7 +24,6 @@
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         .scanning-pulse { animation: pulse 1.5s infinite; color: #3b82f6; }
         
-        /* ログイン画面の背景アニメーション用 */
         .login-bg {
             background: linear-gradient(-45deg, #0f172a, #1e293b, #334155, #0f172a);
             background-size: 400% 400%;
@@ -43,10 +42,10 @@
         <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md border-t-8 border-red-600 transform transition-all">
             <div class="text-center mb-8">
                 <div class="bg-red-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                    <i class="fas fa-shield-alt text-4xl text-red-600"></i>
+                    <i class="fas fa-users-cog text-4xl text-red-600"></i>
                 </div>
                 <h1 class="text-2xl font-bold text-slate-800 tracking-tighter">FG 納品管理マスター</h1>
-                <p class="text-xs text-slate-500 mt-2">v15 Secure Cloud Edition</p>
+                <p class="text-xs text-slate-500 mt-2">v16 Multi-User Edition</p>
             </div>
 
             <div class="space-y-5">
@@ -67,6 +66,7 @@
                 <button onclick="attemptLogin()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-slate-800 transition-colors mt-4 flex justify-center items-center">
                     ログイン <i class="fas fa-sign-in-alt ml-2"></i>
                 </button>
+                <div id="login-status-msg" class="text-center text-xs text-slate-500 mt-2"><i class="fas fa-circle-notch fa-spin mr-1"></i>データベース接続中...</div>
                 <div id="login-error" class="hidden text-center text-xs text-red-600 font-bold bg-red-50 p-2 rounded-lg border border-red-200 mt-4">
                     ユーザー名またはパスワードが間違っています。
                 </div>
@@ -80,7 +80,7 @@
                 <div class="flex items-center space-x-3 cursor-pointer" onclick="location.reload()">
                     <div class="bg-red-600 p-2 rounded-lg"><i class="fas fa-cloud text-white text-xl"></i></div>
                     <div>
-                        <span class="text-xl font-bold tracking-tighter">FG 納品管理 <span class="text-red-500">Cloud Master v15</span></span>
+                        <span class="text-xl font-bold tracking-tighter">FG 納品管理 <span class="text-red-500">Cloud Master v16</span></span>
                         <p class="text-[10px] text-slate-400 leading-none mt-1"><span class="sync-indicator online"></span>クラウド同期中</p>
                     </div>
                 </div>
@@ -193,9 +193,6 @@
                     <div class="space-y-6">
                         <div class="bg-white p-6 rounded-2xl border-2 border-blue-200 shadow-md">
                             <h3 class="text-blue-700 font-bold mb-3 border-b border-blue-200 pb-2 flex items-center"><i class="fas fa-level-up-alt mr-2 text-xl"></i>各OS系統の最新ファーム</h3>
-                            <p class="text-[10px] text-slate-500 mb-3 leading-relaxed">
-                                ※リンク先ページから**完全自動**で最新版を割り出しています。一覧表の機器がこれより古い場合、更新マーク（⬆️）が出ます。
-                            </p>
                             <div class="grid grid-cols-1 gap-2" id="latest-fw-display">
                                 <span class="text-xs text-slate-400">取得中...</span>
                             </div>
@@ -203,9 +200,6 @@
 
                         <div class="bg-white p-6 rounded-2xl border-2 border-orange-200 shadow-md">
                             <h3 class="text-orange-700 font-bold mb-3 border-b border-orange-200 pb-2 flex items-center"><i class="fas fa-robot mr-2 text-xl"></i>AI自動抽出バージョン</h3>
-                            <p class="text-[10px] text-slate-500 mb-3 leading-relaxed">
-                                ※詳細ページをディープスキャンし、**自動で抜き出した脆弱性FW**です。一覧表では<span class="text-orange-600 font-bold">オレンジ色</span>で警告されます。
-                            </p>
                             <div class="flex flex-wrap gap-2" id="auto-vuln-list-display">
                                 <span class="text-xs text-slate-400">取得中...</span>
                             </div>
@@ -213,51 +207,66 @@
 
                         <div class="bg-white p-6 rounded-2xl border-2 border-red-200 shadow-md">
                             <h3 class="text-red-700 font-bold mb-3 border-b border-red-200 pb-2 flex items-center"><i class="fas fa-biohazard mr-2 text-xl"></i>確定要注意バージョン(手動)</h3>
-                            <p class="text-[10px] text-slate-500 mb-3 leading-relaxed">
-                                ※設定タブで手動登録した確実な危険バージョンです。自動検知漏れを防ぐための予備機能です。
-                            </p>
-                            <div class="space-y-2" id="vuln-list-display">
-                                </div>
+                            <div class="space-y-2" id="vuln-list-display"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div id="content-settings" class="hidden">
-                <div class="max-w-5xl mx-auto bg-white p-8 rounded-3xl border shadow-xl">
+                <div class="max-w-6xl mx-auto bg-white p-8 rounded-3xl border shadow-xl">
                     <h2 class="text-2xl font-bold mb-8 border-l-4 border-slate-800 pl-4">システム設定マスター</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                         <div class="bg-slate-50 p-4 rounded-xl border">
                             <h3 class="font-bold mb-4 flex items-center text-slate-700 text-sm"><i class="fas fa-map-marker-alt mr-2 text-green-600"></i>地域マスタ</h3>
                             <div class="flex gap-2 mb-4"><input type="text" id="new-master-region" class="flex-1 border rounded-lg p-2 text-xs outline-none" placeholder="追加する地域"><button onclick="addMaster('region')" class="bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-slate-700">追加</button></div>
-                            <div id="settings-region-list" class="space-y-1 max-h-60 overflow-y-auto"></div>
+                            <div id="settings-region-list" class="space-y-1 max-h-40 overflow-y-auto"></div>
                         </div>
                         <div class="bg-slate-50 p-4 rounded-xl border">
                             <h3 class="font-bold mb-4 flex items-center text-slate-700 text-sm"><i class="fas fa-microchip mr-2 text-blue-600"></i>型番マスタ</h3>
                             <div class="flex gap-2 mb-4"><input type="text" id="new-master-model" class="flex-1 border rounded-lg p-2 text-xs outline-none" placeholder="追加する型番"><button onclick="addMaster('model')" class="bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-slate-700">追加</button></div>
-                            <div id="settings-model-list" class="space-y-1 max-h-60 overflow-y-auto"></div>
+                            <div id="settings-model-list" class="space-y-1 max-h-40 overflow-y-auto"></div>
                         </div>
                         <div class="bg-slate-50 p-4 rounded-xl border">
                             <h3 class="font-bold mb-4 flex items-center text-slate-700 text-sm"><i class="fas fa-tags mr-2 text-purple-600"></i>システム名マスタ</h3>
                             <div class="flex gap-2 mb-4"><input type="text" id="new-master-sys" class="flex-1 border rounded-lg p-2 text-xs outline-none" placeholder="追加するシステム"><button onclick="addMaster('system')" class="bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-slate-700">追加</button></div>
-                            <div id="settings-sys-list" class="space-y-1 max-h-60 overflow-y-auto"></div>
+                            <div id="settings-sys-list" class="space-y-1 max-h-40 overflow-y-auto"></div>
                         </div>
                         <div class="bg-red-50 p-4 rounded-xl border border-red-200">
-                            <h3 class="font-bold mb-4 flex items-center text-red-700 text-sm"><i class="fas fa-exclamation-triangle mr-2"></i>要注意FWマスタ(手動)</h3>
+                            <h3 class="font-bold mb-4 flex items-center text-red-700 text-sm"><i class="fas fa-exclamation-triangle mr-2"></i>要注意FW(手動)</h3>
                             <div class="flex gap-2 mb-4"><input type="text" id="new-master-vuln" class="flex-1 border rounded-lg p-2 text-xs outline-none focus:ring-red-500" placeholder="例: 7.2.3"><button onclick="addMaster('vuln')" class="bg-red-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-red-700">追加</button></div>
-                            <div id="settings-vuln-list" class="space-y-1 max-h-60 overflow-y-auto"></div>
+                            <div id="settings-vuln-list" class="space-y-1 max-h-40 overflow-y-auto"></div>
                         </div>
                     </div>
 
-                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 w-full">
-                        <h3 class="font-bold mb-4 flex items-center text-blue-700 text-sm"><i class="fas fa-arrow-alt-circle-up mr-2"></i>最新FWマスタ（手動上書き用）</h3>
-                        <p class="text-[10px] text-slate-500 mb-4">※自動検知を上書きしたい場合のみ登録してください（例: 7.2 と 7.2.14）。</p>
-                        <div class="flex gap-2 mb-4 max-w-lg">
-                            <input type="text" id="new-master-latest-branch" class="w-1/3 border rounded-lg p-2 text-xs outline-none focus:ring-blue-500 bg-white" placeholder="系統 (例: 7.2)">
-                            <input type="text" id="new-master-latest-ver" class="flex-1 border rounded-lg p-2 text-xs outline-none focus:ring-blue-500 bg-white" placeholder="最新版 (例: 7.2.14)">
-                            <button onclick="addLatestFwMaster()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700">登録</button>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                            <h3 class="font-bold mb-4 flex items-center text-blue-700 text-sm"><i class="fas fa-arrow-alt-circle-up mr-2"></i>最新FWマスタ（手動上書き用）</h3>
+                            <div class="flex gap-2 mb-4">
+                                <input type="text" id="new-master-latest-branch" class="w-1/3 border rounded-lg p-2 text-xs outline-none focus:ring-blue-500 bg-white" placeholder="系統(例: 7.2)">
+                                <input type="text" id="new-master-latest-ver" class="flex-1 border rounded-lg p-2 text-xs outline-none focus:ring-blue-500 bg-white" placeholder="最新版(例: 7.2.14)">
+                                <button onclick="addLatestFwMaster()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700">登録</button>
+                            </div>
+                            <div id="settings-latest-fw-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto"></div>
                         </div>
-                        <div id="settings-latest-fw-list" class="grid grid-cols-1 md:grid-cols-3 gap-3 max-h-60 overflow-y-auto"></div>
+
+                        <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-200 shadow-inner">
+                            <h3 class="font-bold mb-2 flex items-center text-indigo-800 text-sm"><i class="fas fa-users-cog mr-2"></i>ログインユーザー管理</h3>
+                            <p class="text-[10px] text-indigo-600 mb-4 font-bold">※追加したID/PWは全員のログイン画面で有効になります。</p>
+                            <div class="flex gap-2 mb-4">
+                                <div class="relative w-1/3">
+                                    <span class="absolute inset-y-0 left-0 flex items-center pl-2 text-indigo-400 text-xs"><i class="fas fa-user"></i></span>
+                                    <input type="text" id="new-master-user" class="w-full border rounded-lg py-2 pl-6 pr-2 text-xs outline-none focus:ring-indigo-500 bg-white" placeholder="新ユーザー名">
+                                </div>
+                                <div class="relative flex-1">
+                                    <span class="absolute inset-y-0 left-0 flex items-center pl-2 text-indigo-400 text-xs"><i class="fas fa-lock"></i></span>
+                                    <input type="text" id="new-master-pass" class="w-full border rounded-lg py-2 pl-6 pr-2 text-xs outline-none focus:ring-indigo-500 bg-white" placeholder="新パスワード">
+                                </div>
+                                <button onclick="addMasterUser()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors">追加</button>
+                            </div>
+                            <div id="settings-user-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -268,12 +277,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // ==========================================
-        // ログイン設定（ソースコードを見られるとバレますので注意）
-        // ==========================================
-        const LOGIN_USER = "admin";
-        const LOGIN_PASS = "forti2026";
-        
         // Firebase 接続キー
         const firebaseConfig = {
             apiKey: "AIzaSyA1natPUopWd-2SlfOAzJULYiSlJudm2Rs",
@@ -290,7 +293,7 @@
         const inventoryCol = collection(db, "inventory");
         const masterDoc = doc(db, "config", "masters");
 
-        // 初期データ
+        // 初期データ＆変数定義
         window.inventoryData = [];
         window.masterRegions = ["北海道", "東北", "関東", "中部", "近畿", "中国", "四国", "九州", "沖縄"];
         window.masterSystems = ["情報システム部", "営業部", "経理・総務", "基幹システム"];
@@ -298,27 +301,73 @@
         window.masterVuln = ["7.2.0", "7.0.5"]; 
         window.masterLatestFw = {}; 
         
+        // ⭐️ デフォルトのログインユーザー（DBに無い場合の初期値）
+        window.masterUsers = [{ user: "admin", pass: "forti2026" }]; 
+        
         window.autoDetectedVuln = []; 
         window.autoLatestFw = {}; 
-
         window.selectedSystems = [];
         const ADMIN_PW = "komayuu28";
         const VIEW_PW = "sigma-sol2012";
 
+        let isDbConnected = false;
+
         // ==========================================
-        // ログイン処理
+        // STEP 1: ページ読み込みと同時にマスタデータ（ユーザー情報含む）をFirebaseから取得
+        // ==========================================
+        onSnapshot(masterDoc, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                window.masterRegions = data.regions || window.masterRegions;
+                window.masterSystems = data.systems || window.masterSystems;
+                window.masterModels = data.models || window.masterModels;
+                window.masterVuln = data.vuln || window.masterVuln;
+                window.masterLatestFw = data.latestFw || window.masterLatestFw;
+                // ⭐️ DBからユーザー情報を取得
+                window.masterUsers = data.users || window.masterUsers; 
+                
+                // ログイン画面の「接続中」を消す
+                isDbConnected = true;
+                const statusMsg = document.getElementById('login-status-msg');
+                if(statusMsg) statusMsg.innerHTML = '<span class="text-green-600"><i class="fas fa-check-circle mr-1"></i>データベース接続完了</span>';
+
+                // ログイン済みの場合は画面も更新する
+                if(!document.getElementById('main-app').classList.contains('hidden')) {
+                    updateDynamicLists();
+                    renderVulnDisplay();
+                    renderLatestFwMaster();
+                    renderLatestFwDisplay();
+                    renderMasterUserList();
+                    renderTable();
+                }
+            } else {
+                // 初回構築時：デフォルトの全マスタをFirebaseに書き込む
+                saveAllMastersToFirebase();
+            }
+        });
+
+        // ==========================================
+        // STEP 2: ログイン処理（取得したユーザーリストと照合）
         // ==========================================
         window.attemptLogin = () => {
-            const user = document.getElementById('login-user').value;
-            const pass = document.getElementById('login-pass').value;
+            if(!isDbConnected) {
+                alert("データベースと同期中です。数秒待ってから再度お試しください。");
+                return;
+            }
+
+            const inputUser = document.getElementById('login-user').value.trim();
+            const inputPass = document.getElementById('login-pass').value.trim();
             
-            if(user === LOGIN_USER && pass === LOGIN_PASS) {
+            // ⭐️ ユーザーリストから一致するものを探す
+            const validUser = window.masterUsers.find(u => u.user === inputUser && u.pass === inputPass);
+            
+            if(validUser) {
                 // ログイン成功
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
-                document.getElementById('display-username').innerText = user;
+                document.getElementById('display-username').innerText = inputUser;
                 
-                // ログインしてから初めてデータベースと通信＆ニューススキャンを開始する
+                // ログイン後に初めてメインの機器データ取得とニューススキャンを開始
                 initApplicationData();
             } else {
                 // ログイン失敗
@@ -326,41 +375,79 @@
             }
         };
 
-        // ==========================================
         // メインシステム初期化処理（ログイン後に実行）
-        // ==========================================
         function initApplicationData() {
-            // クラウドからのリアルタイム取得
+            // インベントリのリアルタイム同期を開始
             onSnapshot(inventoryCol, (snapshot) => {
                 window.inventoryData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderTable();
             });
-
-            onSnapshot(masterDoc, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    window.masterRegions = data.regions || window.masterRegions;
-                    window.masterSystems = data.systems || window.masterSystems;
-                    window.masterModels = data.models || window.masterModels;
-                    window.masterVuln = data.vuln || window.masterVuln;
-                    window.masterLatestFw = data.latestFw || window.masterLatestFw;
-                    updateDynamicLists();
-                    renderVulnDisplay();
-                    renderLatestFwMaster();
-                    renderLatestFwDisplay();
-                    renderTable();
-                } else {
-                    setDoc(masterDoc, { regions: window.masterRegions, systems: window.masterSystems, models: window.masterModels, vuln: window.masterVuln, latestFw: window.masterLatestFw });
-                }
-            });
             
             updateDynamicLists();
             renderVulnDisplay();
-            // ログインしたタイミングでニュースのディープスキャンを裏で走らせる
+            renderLatestFwMaster();
+            renderLatestFwDisplay();
+            renderMasterLists();
+            renderMasterUserList();
             fetchNews();
         }
 
-        // 納品データ保存処理
+        // 汎用マスタ保存関数
+        const saveAllMastersToFirebase = async () => {
+            await setDoc(masterDoc, { 
+                regions: window.masterRegions, 
+                systems: window.masterSystems, 
+                models: window.masterModels, 
+                vuln: window.masterVuln, 
+                latestFw: window.masterLatestFw,
+                users: window.masterUsers // ユーザー情報も一緒に保存
+            });
+        };
+
+        // ==========================================
+        // ⭐️ 新機能：ログインユーザーの追加・削除
+        // ==========================================
+        window.addMasterUser = async () => {
+            const u = document.getElementById('new-master-user').value.trim();
+            const p = document.getElementById('new-master-pass').value.trim();
+            if(!u || !p) return alert("ユーザー名とパスワードを入力してください");
+            
+            if(window.masterUsers.find(x => x.user === u)) return alert("そのユーザー名は既に存在します！");
+
+            window.masterUsers.push({ user: u, pass: p });
+            await saveAllMastersToFirebase();
+            
+            document.getElementById('new-master-user').value = "";
+            document.getElementById('new-master-pass').value = "";
+            renderMasterUserList();
+            alert(`ユーザー「${u}」を追加しました。`);
+        };
+
+        window.removeMasterUser = async (u) => {
+            if(window.masterUsers.length <= 1) return alert("最低1つのアカウントは残す必要があります！（誰もログインできなくなります）");
+            if(!confirm(`ユーザー「${u}」を本当に削除しますか？\n削除後、このユーザーはログインできなくなります。`)) return;
+            
+            window.masterUsers = window.masterUsers.filter(x => x.user !== u);
+            await saveAllMastersToFirebase();
+            renderMasterUserList();
+        };
+
+        window.renderMasterUserList = () => {
+            const container = document.getElementById('settings-user-list');
+            container.innerHTML = window.masterUsers.map(u => `
+                <div class="flex justify-between items-center bg-white p-2 border border-indigo-100 rounded-lg text-sm hover:bg-indigo-50 shadow-sm transition-colors">
+                    <div>
+                        <span class="font-bold text-indigo-800"><i class="fas fa-user text-indigo-300 mr-2 text-xs"></i>${u.user}</span>
+                        <span class="text-[10px] text-slate-400 ml-2">PW: ${u.pass.replace(/./g, '*')}</span>
+                    </div>
+                    <button onclick="removeMasterUser('${u.user}')" class="text-indigo-300 hover:text-red-500 transition-colors" title="削除"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            `).join('');
+        };
+
+        // ------------------------------------------
+        // 以下、これまでの機能（変更なし）
+        // ------------------------------------------
         window.saveData = async () => {
             const id = document.getElementById('edit-id').value;
             const newItem = {
@@ -394,7 +481,6 @@
             }
         };
 
-        // 一覧表の描画
         window.renderTable = () => {
             const term = document.getElementById('search-input').value.toLowerCase();
             const tbody = document.getElementById('inventory-tbody');
@@ -477,7 +563,7 @@
             else if(type === 'model') window.masterModels.push(val);
             else if(type === 'vuln') window.masterVuln.push(val);
             
-            await setDoc(masterDoc, { regions: window.masterRegions, systems: window.masterSystems, models: window.masterModels, vuln: window.masterVuln, latestFw: window.masterLatestFw });
+            await saveAllMastersToFirebase();
             document.getElementById(inputId).value = "";
             renderMasterLists();
         };
@@ -490,7 +576,7 @@
             else if(type === 'model') window.masterModels = window.masterModels.filter(x => x !== val);
             else if(type === 'vuln') window.masterVuln = window.masterVuln.filter(x => x !== val);
             
-            await setDoc(masterDoc, { regions: window.masterRegions, systems: window.masterSystems, models: window.masterModels, vuln: window.masterVuln, latestFw: window.masterLatestFw });
+            await saveAllMastersToFirebase();
             renderMasterLists();
         };
 
@@ -500,7 +586,7 @@
             if(!branch || !ver) return;
             if(!window.masterLatestFw) window.masterLatestFw = {};
             window.masterLatestFw[branch] = ver;
-            await setDoc(masterDoc, { regions: window.masterRegions, systems: window.masterSystems, models: window.masterModels, vuln: window.masterVuln, latestFw: window.masterLatestFw });
+            await saveAllMastersToFirebase();
             document.getElementById('new-master-latest-branch').value = "";
             document.getElementById('new-master-latest-ver').value = "";
             renderLatestFwMaster(); renderLatestFwDisplay(); renderTable();
@@ -509,7 +595,7 @@
         window.removeLatestFwMaster = async (branch) => {
             if(!confirm(`系統「${branch}」の最新FW設定を削除しますか？`)) return;
             delete window.masterLatestFw[branch];
-            await setDoc(masterDoc, { regions: window.masterRegions, systems: window.masterSystems, models: window.masterModels, vuln: window.masterVuln, latestFw: window.masterLatestFw });
+            await saveAllMastersToFirebase();
             renderLatestFwMaster(); renderLatestFwDisplay(); renderTable();
         };
 
@@ -574,7 +660,7 @@
         };
 
         window.renderMasterLists = () => {
-            const createList = (arr, type) => arr.map(item => `<div class="flex justify-between items-center bg-white p-2 border rounded-lg text-sm mb-1 hover:bg-slate-50"><span>${item}</span><button onclick="removeMaster('${type}', '${item}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button></div>`).join('');
+            const createList = (arr, type) => arr.map(item => `<div class="flex justify-between items-center bg-white p-2 border rounded-lg text-sm mb-1 hover:bg-slate-50 shadow-sm"><span>${item}</span><button onclick="removeMaster('${type}', '${item}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button></div>`).join('');
             document.getElementById('settings-region-list').innerHTML = createList(window.masterRegions, 'region');
             document.getElementById('settings-sys-list').innerHTML = createList(window.masterSystems, 'system');
             document.getElementById('settings-model-list').innerHTML = createList(window.masterModels, 'model');
@@ -606,7 +692,7 @@
             container.innerHTML = branches.map(branch => {
                 const ver = combined[branch];
                 const isMaster = !!(window.masterLatestFw && window.masterLatestFw[branch]);
-                const badge = isMaster ? '<span class="text-[9px] bg-blue-600 text-white px-1.5 py-0.5 rounded ml-2 shadow-sm">手動優先</span>' : '<span class="text-[9px] bg-green-500 text-white px-1.5 py-0.5 rounded ml-2 shadow-sm">自動抽出完了</span>';
+                const badge = isMaster ? '<span class="text-[9px] bg-blue-600 text-white px-1.5 py-0.5 rounded ml-2 shadow-sm">手動優先</span>' : '<span class="text-[9px] bg-green-500 text-white px-1.5 py-0.5 rounded ml-2 shadow-sm">自動抽出</span>';
                 return `<div class="bg-slate-50 border rounded-lg p-3 flex justify-between items-center shadow-sm"><span class="font-bold text-slate-600 text-sm border-b-2 border-slate-300">${branch}.x</span><div class="flex items-center"><span class="font-mono text-blue-700 font-black text-lg">${ver}</span>${badge}</div></div>`;
             }).join('');
         };
@@ -618,11 +704,10 @@
             } 
         };
 
-        // CORS回避プロキシを用いたディープスキャン自動化ロジック
+        // ディープスキャン自動化ロジック
         async function fetchNews() {
             const container = document.getElementById('news-container');
             const statusIndicator = document.getElementById('deep-scan-status');
-            
             if(container.innerHTML !== "" && !container.innerHTML.includes("取得中")) return; 
             
             container.innerHTML = '<div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin text-3xl mb-3"></i><br>RSSを取得中...</div>';
@@ -646,7 +731,7 @@
                         </div>
                         <h4 class="font-bold text-sm mb-2 text-slate-800">${i.title}</h4>
                         <p class="text-[11px] text-slate-500 mb-3 line-clamp-2">${descText}</p>
-                        <a href="${i.link}" target="_blank" class="text-[10px] text-blue-600 font-bold hover:underline bg-blue-50 px-3 py-1.5 rounded-lg inline-block">公式詳細ページ（英語） <i class="fas fa-external-link-alt ml-1"></i></a>
+                        <a href="${i.link}" target="_blank" class="text-[10px] text-blue-600 font-bold hover:underline bg-blue-50 px-3 py-1.5 rounded-lg inline-block">公式詳細（英語） <i class="fas fa-external-link-alt ml-1"></i></a>
                     </div>`;
                 }).join('');
 
@@ -686,9 +771,7 @@
                                     });
                                 }
                             }
-                        } catch(err) {
-                            console.warn("ディープスキャンに一部失敗しました", err);
-                        }
+                        } catch(err) { console.warn("スキャン一部失敗", err); }
                     }
                 }
 
@@ -702,17 +785,15 @@
                 if(window.autoDetectedVuln.length > 0) {
                     autoContainer.innerHTML = window.autoDetectedVuln.map(v => `<span class="auto-vuln-badge px-3 py-1 rounded text-xs font-bold tracking-widest shadow-sm">v ${v}</span>`).join('');
                 } else {
-                    autoContainer.innerHTML = '<span class="text-xs text-slate-400">現在検知された脆弱性バージョンはありません</span>';
+                    autoContainer.innerHTML = '<span class="text-xs text-slate-400">現在検知された脆弱性はありません</span>';
                 }
 
                 renderLatestFwDisplay();
                 renderTable();
-                
                 statusIndicator.classList.add('hidden');
 
             } catch (e) { 
-                container.innerHTML = '<div class="text-red-500 bg-red-50 p-4 rounded-xl border border-red-200">ニュース・スキャンの実行に失敗しました。</div>'; 
-                document.getElementById('auto-vuln-list-display').innerHTML = '<span class="text-xs text-red-400">解析エラー</span>';
+                container.innerHTML = '<div class="text-red-500 bg-red-50 p-4 rounded-xl border border-red-200">スキャンに失敗しました。</div>'; 
                 statusIndicator.classList.add('hidden');
             }
         }
