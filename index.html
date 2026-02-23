@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FG 納品管理マスター v22 - 最終修正版</title>
+    <title>FortiGate納品機器管理マスタ v23</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -18,20 +18,29 @@
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         .login-bg { background: linear-gradient(-45deg, #0f172a, #1e293b, #334155, #0f172a); background-size: 400% 400%; animation: gradientBG 15s ease infinite; }
         @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        /* クラウド同期中のアニメーション点滅 */
+        .sync-dot { animation: syncPulse 1.5s infinite; }
+        @keyframes syncPulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     </style>
 </head>
 <body class="min-h-screen">
 
     <div id="login-screen" class="fixed inset-0 login-bg flex items-center justify-center z-[200]">
-        <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md">
+        <div class="bg-white p-10 rounded-[3rem] shadow-2xl w-full max-w-md border border-white/20">
             <div class="text-center mb-8">
-                <div class="bg-red-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"><i class="fas fa-shield-alt text-3xl text-white"></i></div>
-                <h1 class="text-2xl font-black text-slate-800 tracking-tight">FORTI-MASTER <span class="text-red-600 text-sm">v22</span></h1>
+                <div class="bg-red-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg rotate-3">
+                    <i class="fas fa-shield-alt text-3xl text-white"></i>
+                </div>
+                <h1 class="text-2xl font-black text-slate-800 tracking-tight">FortiGate納品機器管理マスタ</h1>
+                <div class="flex items-center justify-center space-x-2 mt-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full sync-dot"></span>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">クラウド同期中...</p>
+                </div>
             </div>
             <div class="space-y-4">
-                <input type="text" id="login-user" placeholder="ユーザー名" class="w-full border border-slate-200 rounded-xl py-4 px-5 outline-none focus:ring-2 focus:ring-red-500 bg-slate-50 font-bold">
-                <input type="password" id="login-pass" placeholder="パスワード" class="w-full border border-slate-200 rounded-xl py-4 px-5 outline-none focus:ring-2 focus:ring-red-500 bg-slate-50 font-bold">
-                <button onclick="attemptLogin()" class="w-full bg-slate-900 text-white font-black py-4 rounded-xl shadow-xl hover:bg-red-600 transition-all">ログイン</button>
+                <input type="text" id="login-user" placeholder="ユーザー名" class="w-full border border-slate-200 rounded-xl py-4 px-5 outline-none focus:ring-2 focus:ring-red-500 bg-slate-50 font-bold shadow-inner">
+                <input type="password" id="login-pass" placeholder="パスワード" class="w-full border border-slate-200 rounded-xl py-4 px-5 outline-none focus:ring-2 focus:ring-red-500 bg-slate-50 font-bold shadow-inner">
+                <button onclick="attemptLogin()" class="w-full bg-slate-900 text-white font-black py-4 rounded-xl shadow-xl hover:bg-red-600 transition-all transform hover:-translate-y-1">ログイン</button>
                 <div id="login-error" class="hidden text-center text-xs text-red-600 font-bold bg-red-50 p-3 rounded-xl border border-red-100">認証に失敗しました。</div>
             </div>
         </div>
@@ -41,166 +50,188 @@
         <nav class="bg-slate-900 text-white sticky top-0 z-50 border-b border-slate-800 shadow-xl">
             <div class="container mx-auto px-6 py-4 flex justify-between items-center">
                 <div class="flex items-center space-x-4 cursor-pointer" onclick="location.reload()">
-                    <div class="bg-red-600 p-2 rounded-lg"><i class="fas fa-network-wired text-white text-xl"></i></div>
-                    <span class="text-xl font-black tracking-tighter uppercase">FG-MASTER</span>
+                    <div class="bg-red-600 p-2 rounded-lg shadow-inner"><i class="fas fa-network-wired text-white text-xl"></i></div>
+                    <div>
+                        <span class="text-xl font-black tracking-tighter uppercase">FortiGate 納品機器管理マスタ</span>
+                        <div class="flex items-center space-x-1">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full sync-dot"></span>
+                            <span class="text-[9px] text-slate-500 font-bold">CONNECTED TO CLOUD</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="flex items-center space-x-6">
-                    <span id="display-username" class="text-sm font-bold text-slate-400"></span>
-                    <button onclick="enterSettings()" class="bg-slate-800 p-2 rounded-lg text-slate-400 hover:text-white"><i class="fas fa-cog"></i></button>
+                    <div class="text-right">
+                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none mb-1">Authenticated</p>
+                        <span id="display-username" class="text-sm font-bold text-slate-200"></span>
+                    </div>
+                    <button onclick="enterSettings()" class="bg-slate-800 p-3 rounded-xl text-slate-400 hover:text-white transition-colors border border-slate-700 hover:border-slate-500"><i class="fas fa-cog"></i></button>
                 </div>
             </div>
         </nav>
 
         <div class="container mx-auto px-4 py-8">
             <div id="dashboard-area" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"><p class="text-[10px] font-black text-slate-400 mb-2 uppercase">Total</p><span class="text-3xl font-black" id="stat-total">0</span></div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 cursor-pointer hover:bg-red-50" onclick="setSearchFilter('vuln')"><p class="text-[10px] font-black text-red-400 mb-2 uppercase">Vuln</p><span class="text-3xl font-black text-red-600" id="stat-vuln">0</span></div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 cursor-pointer hover:bg-orange-50" onclick="setSearchFilter('update')"><p class="text-[10px] font-black text-orange-400 mb-2 uppercase">Update</p><span class="text-3xl font-black text-orange-500" id="stat-pending">0</span></div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"><p class="text-[10px] font-black text-green-400 mb-2 uppercase">Auto FW</p><span class="text-3xl font-black text-green-600" id="stat-auto-count">0</span></div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"><p class="text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Total Devices</p><span class="text-3xl font-black text-slate-800" id="stat-total">0</span></div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 cursor-pointer hover:bg-red-50 transition-colors" onclick="setSearchFilter('vuln')"><p class="text-[10px] font-black text-red-400 mb-2 uppercase tracking-widest">Vulnerabilities</p><span class="text-3xl font-black text-red-600" id="stat-vuln">0</span></div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 cursor-pointer hover:bg-orange-50 transition-colors" onclick="setSearchFilter('update')"><p class="text-[10px] font-black text-orange-400 mb-2 uppercase tracking-widest">Pending Updates</p><span class="text-3xl font-black text-orange-500" id="stat-pending">0</span></div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"><p class="text-[10px] font-black text-green-400 mb-2 uppercase tracking-widest">Auto FW Active</p><span class="text-3xl font-black text-green-600" id="stat-auto-count">0</span></div>
             </div>
 
-            <div class="flex space-x-2 mb-8 bg-slate-200 p-1 rounded-xl w-fit">
-                <button onclick="switchTab('list')" id="tab-list" class="px-6 py-2 rounded-lg font-black tab-active transition-all">納品一覧</button>
-                <button onclick="switchTab('register')" id="tab-register" class="px-6 py-2 rounded-lg font-black text-slate-500 transition-all">機器登録</button>
-                <button onclick="switchTab('news')" id="tab-news" class="px-6 py-2 rounded-lg font-black text-slate-500 transition-all">解析・ニュース</button>
-                <button onclick="switchTab('settings')" id="tab-settings" class="hidden px-6 py-2 rounded-lg font-black text-slate-500 transition-all">管理者設定</button>
+            <div class="flex space-x-2 mb-8 bg-slate-200 p-1.5 rounded-2xl w-fit">
+                <button onclick="switchTab('list')" id="tab-list" class="px-8 py-2.5 rounded-xl font-black tab-active transition-all shadow-sm">納品一覧</button>
+                <button onclick="switchTab('register')" id="tab-register" class="px-8 py-2.5 rounded-xl font-black text-slate-500 hover:text-slate-800 transition-all">機器登録</button>
+                <button onclick="switchTab('news')" id="tab-news" class="px-8 py-2.5 rounded-xl font-black text-slate-500 hover:text-slate-800 transition-all flex items-center"><i class="fas fa-bolt mr-2 text-indigo-500"></i>解析・Auto FW</button>
+                <button onclick="switchTab('settings')" id="tab-settings" class="hidden px-8 py-2.5 rounded-xl font-black text-slate-500 hover:text-slate-800 transition-all">管理者設定</button>
             </div>
 
             <div id="content-list">
-                <div class="mb-4 flex gap-4 items-center">
-                    <input type="text" id="search-input" onkeyup="renderTable()" class="flex-1 border border-slate-200 rounded-xl py-3 px-5 outline-none font-bold" placeholder="検索...">
-                    <button onclick="clearSearchFilter()" id="clear-filter-btn" class="hidden bg-slate-800 text-white px-4 py-3 rounded-xl font-bold">リセット</button>
+                <div class="mb-6 flex gap-4 items-center">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="search-input" onkeyup="renderTable()" class="w-full border border-slate-200 rounded-2xl py-4 pl-12 pr-6 outline-none font-bold shadow-sm focus:ring-4 focus:ring-red-500/5 transition-all" placeholder="顧客名、SN、バージョンで検索...">
+                    </div>
+                    <button onclick="clearSearchFilter()" id="clear-filter-btn" class="hidden bg-slate-900 text-white px-6 py-4 rounded-2xl font-black hover:bg-red-600 transition-all shadow-lg">フィルタ解除 &times;</button>
                 </div>
-                <div class="bg-white rounded-3xl shadow-sm border overflow-x-auto">
+                <div class="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">
                     <table class="w-full text-left">
-                        <thead class="bg-slate-50 text-[11px] font-black text-slate-500 border-b">
+                        <thead class="bg-slate-50 text-[11px] font-black text-slate-500 border-b border-slate-100 uppercase tracking-tighter">
                             <tr>
-                                <th class="px-6 py-4">納品先 / 地域</th>
-                                <th class="px-6 py-4">型番 / SN</th>
-                                <th class="px-6 py-4">IP</th>
-                                <th class="px-6 py-4">FW Ver</th>
-                                <th class="px-6 py-4">Auto FW</th>
-                                <th class="px-6 py-4">相乗り部門</th>
-                                <th class="px-6 py-4 text-center">操作</th>
+                                <th class="px-8 py-5">納品先 / 地域</th>
+                                <th class="px-8 py-5">型番 / SN</th>
+                                <th class="px-8 py-5">管理IP</th>
+                                <th class="px-8 py-5">FW Ver</th>
+                                <th class="px-8 py-5">自動FW</th>
+                                <th class="px-8 py-5">相乗り部門</th>
+                                <th class="px-8 py-5 text-center">操作</th>
                             </tr>
                         </thead>
-                        <tbody id="inventory-tbody" class="divide-y divide-slate-100 text-sm"></tbody>
+                        <tbody id="inventory-tbody" class="divide-y divide-slate-50 text-sm"></tbody>
                     </table>
                 </div>
             </div>
 
             <div id="content-register" class="hidden">
-                <div class="max-w-4xl mx-auto bg-white p-8 rounded-[2rem] shadow-xl border">
-                    <h2 id="form-title" class="text-2xl font-black mb-8 border-l-8 border-red-600 pl-4">機器情報の登録</h2>
+                <div class="max-w-4xl mx-auto bg-white p-10 rounded-[3rem] shadow-2xl border border-slate-100">
+                    <h2 id="form-title" class="text-3xl font-black mb-10 border-l-8 border-red-600 pl-6 text-slate-800 uppercase tracking-tight">機器情報の登録</h2>
                     <input type="hidden" id="edit-id" value="">
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div><label class="text-xs font-black text-slate-400">納品先名 *</label><input type="text" id="reg-customer" class="w-full border rounded-xl p-3 mt-1 font-bold"></div>
-                        <div>
-                            <label class="text-xs font-black text-slate-400">地域 (マスタ反映)</label>
-                            <input list="region-options" id="reg-region" class="w-full border rounded-xl p-3 mt-1 font-bold">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">納品先名 *</label><input type="text" id="reg-customer" class="w-full border border-slate-200 rounded-2xl p-4 font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner"></div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">地域 (マスタ反映)</label>
+                            <input list="region-options" id="reg-region" class="w-full border border-slate-200 rounded-2xl p-4 font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner">
                             <datalist id="region-options"></datalist>
                         </div>
-                        <div>
-                            <label class="text-xs font-black text-slate-400">型番 (マスタ反映)</label>
-                            <input list="model-options" id="reg-model" class="w-full border rounded-xl p-3 mt-1 font-bold">
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">型番 (マスタ反映)</label>
+                            <input list="model-options" id="reg-model" class="w-full border border-slate-200 rounded-2xl p-4 font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner">
                             <datalist id="model-options"></datalist>
                         </div>
-                        <div><label class="text-xs font-black text-slate-400">シリアルナンバー</label><input type="text" id="reg-serial" class="w-full border rounded-xl p-3 mt-1 font-mono font-bold"></div>
-                        <div><label class="text-xs font-black text-slate-400">管理IP</label><input type="text" id="reg-ip" class="w-full border rounded-xl p-3 mt-1 font-mono font-bold"></div>
-                        <div><label class="text-xs font-black text-slate-400">FWバージョン</label><input type="text" id="reg-fw-ver" class="w-full border rounded-xl p-3 mt-1 font-bold" placeholder="7.2.4"></div>
-                        <div><label class="text-xs font-black text-slate-400">FW最終更新日</label><input type="date" id="reg-fw-date" class="w-full border rounded-xl p-3 mt-1"></div>
-                        <div>
-                            <label class="text-xs font-black text-slate-400">自動ファームウェア設定</label>
-                            <select id="reg-autofw" class="w-full border rounded-xl p-3 mt-1 font-bold bg-white">
+                        <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">シリアルナンバー</label><input type="text" id="reg-serial" class="w-full border border-slate-200 rounded-2xl p-4 font-mono font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner"></div>
+                        <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">管理IP</label><input type="text" id="reg-ip" class="w-full border border-slate-200 rounded-2xl p-4 font-mono font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner"></div>
+                        <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">FWバージョン</label><input type="text" id="reg-fw-ver" class="w-full border border-slate-200 rounded-2xl p-4 font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner" placeholder="7.2.4"></div>
+                        <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">FW最終更新日</label><input type="date" id="reg-fw-date" class="w-full border border-slate-200 rounded-2xl p-4 font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner"></div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">自動ファームウェア設定</label>
+                            <select id="reg-autofw" class="w-full border border-slate-200 rounded-2xl p-4 font-bold bg-white focus:ring-2 focus:ring-red-500 outline-none shadow-inner appearance-none">
                                 <option value="未設定">未設定</option>
-                                <option value="OFF">OFF</option>
-                                <option value="ON">ON</option>
+                                <option value="OFF">OFF (手動管理)</option>
+                                <option value="ON">ON (自動更新有効)</option>
                             </select>
                         </div>
-                        <div class="md:col-span-2">
-                            <label class="text-xs font-black text-slate-400">相乗り部門システム (マスタから選択)</label>
-                            <div class="flex gap-2 mt-1">
-                                <select id="reg-dept-select" class="flex-1 border rounded-xl p-3 font-bold bg-white"></select>
-                                <button onclick="addDeptTag()" class="bg-slate-900 text-white px-6 rounded-xl font-black">追加</button>
+                        <div class="md:col-span-2 space-y-2">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">相乗り部門システム (マスタから選択)</label>
+                            <div class="flex gap-4 mt-1">
+                                <select id="reg-dept-select" class="flex-1 border border-slate-200 rounded-2xl p-4 font-bold bg-white focus:ring-2 focus:ring-red-500 outline-none shadow-inner appearance-none"></select>
+                                <button onclick="addDeptTag()" class="bg-slate-900 text-white px-10 rounded-2xl font-black hover:bg-slate-700 transition-all shadow-lg">追加</button>
                             </div>
-                            <div id="selected-depts" class="flex flex-wrap p-4 bg-slate-50 rounded-xl border border-dashed mt-3 min-h-[60px]"></div>
+                            <div id="selected-depts" class="flex flex-wrap p-6 bg-slate-50 rounded-[2rem] border border-dashed border-slate-200 mt-4 min-h-[80px]"></div>
                         </div>
                     </div>
-                    <div class="mt-8 flex justify-end gap-3">
-                        <button id="cancel-edit-btn" onclick="cancelEdit()" class="hidden bg-slate-100 px-6 py-3 rounded-xl font-black">キャンセル</button>
-                        <button onclick="saveData()" class="bg-red-600 text-white px-10 py-3 rounded-xl font-black shadow-lg">保存して同期</button>
+                    <div class="mt-12 flex justify-end gap-4">
+                        <button id="cancel-edit-btn" onclick="cancelEdit()" class="hidden bg-slate-100 text-slate-600 px-10 py-4 rounded-2xl font-black hover:bg-slate-200 transition-all">キャンセル</button>
+                        <button onclick="saveData()" class="bg-red-600 text-white px-16 py-4 rounded-2xl font-black shadow-xl hover:bg-red-700 transition-all transform hover:scale-105 flex items-center">
+                            <i class="fas fa-cloud-upload-alt mr-3"></i> データベースへ保存
+                        </button>
                     </div>
                 </div>
             </div>
 
             <div id="content-news" class="hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 space-y-6">
-                        <div class="bg-indigo-900 text-white p-8 rounded-3xl shadow-xl">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-xl font-black italic">PSIRT INTELLIGENCE</h3>
-                                <span id="scan-badge" class="bg-green-500 px-4 py-1 rounded-full text-[10px] font-black online">ONLINE</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="bg-white/10 p-4 rounded-xl">
-                                    <p class="text-[10px] text-indigo-300 font-black mb-2 uppercase">Detected Latest</p>
-                                    <div id="auto-fw-list" class="text-sm font-bold space-y-1"></div>
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <div class="lg:col-span-8 space-y-8">
+                        <div class="bg-indigo-900 text-white p-10 rounded-[3rem] shadow-2xl relative overflow-hidden">
+                            <div class="relative z-10">
+                                <div class="flex justify-between items-center mb-10">
+                                    <h3 class="text-2xl font-black italic tracking-tighter flex items-center"><i class="fas fa-microchip mr-4 text-indigo-400"></i>PSIRT INTELLIGENCE</h3>
+                                    <span id="scan-badge" class="bg-green-500 px-6 py-2 rounded-full text-[10px] font-black online">LIVE FEED</span>
                                 </div>
-                                <div class="bg-white/10 p-4 rounded-xl">
-                                    <p class="text-[10px] text-indigo-300 font-black mb-2 uppercase">Critical Vuln FW</p>
-                                    <div id="auto-vuln-list" class="flex flex-wrap gap-1"></div>
+                                <div class="grid grid-cols-2 gap-8">
+                                    <div class="bg-white/10 p-6 rounded-[2rem] border border-white/20 backdrop-blur-sm shadow-inner">
+                                        <p class="text-[10px] text-indigo-300 font-black mb-4 uppercase tracking-widest">Detected Latest (Auto)</p>
+                                        <div id="auto-fw-list" class="text-sm font-bold space-y-2"></div>
+                                    </div>
+                                    <div class="bg-white/10 p-6 rounded-[2rem] border border-white/20 backdrop-blur-sm shadow-inner">
+                                        <p class="text-[10px] text-indigo-300 font-black mb-4 uppercase tracking-widest">Critical Vuln FW</p>
+                                        <div id="auto-vuln-list" class="flex flex-wrap gap-2"></div>
+                                    </div>
                                 </div>
                             </div>
+                            <i class="fas fa-shield-virus absolute bottom--10 right--10 text-[15rem] text-white/5 rotate-12"></i>
                         </div>
+                        <h3 class="font-black text-xl mb-6 text-slate-700 flex items-center px-4"><i class="fas fa-rss text-orange-500 mr-3"></i>FortiGuard セキュリティ勧告</h3>
                         <div id="news-container" class="space-y-4"></div>
                     </div>
-                    <div class="space-y-6">
-                        <div class="bg-white p-6 rounded-2xl border border-slate-200">
-                            <h3 class="font-black text-sm mb-4 border-b pb-2">管理者推奨 FW</h3>
-                            <div id="manual-fw-display" class="space-y-2"></div>
+                    <div class="lg:col-span-4 space-y-6">
+                        <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl">
+                            <h3 class="font-black text-sm mb-6 border-b pb-4 flex items-center text-slate-800"><i class="fas fa-user-shield mr-3 text-blue-500"></i>管理者推奨バージョン</h3>
+                            <div id="manual-fw-display" class="space-y-3"></div>
+                        </div>
+                        <div class="bg-green-50 p-8 rounded-[2.5rem] border border-green-100 shadow-lg">
+                            <h3 class="text-green-800 font-black mb-4 text-sm flex items-center"><i class="fas fa-robot mr-3"></i>Auto FW Status</h3>
+                            <p class="text-[11px] text-green-700 font-bold leading-relaxed">自動FWが「ON」の機器は、解析された最新版との差分を自動チェックし、更新が必要な場合に強調表示されます。</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div id="content-settings" class="hidden">
-                <div class="bg-white p-8 rounded-3xl border shadow-xl">
-                    <h2 class="text-2xl font-black mb-8 border-l-8 border-slate-900 pl-4">マスタ設定管理</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">地域</h3>
-                            <div class="flex gap-1 mb-4"><input type="text" id="new-master-region" class="flex-1 border rounded-lg p-2 text-xs font-bold"><button onclick="addMaster('region')" class="bg-slate-800 text-white px-2 rounded-lg text-xs">＋</button></div>
-                            <div id="settings-region-list" class="space-y-1 max-h-40 overflow-y-auto"></div>
+                <div class="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-2xl">
+                    <h2 class="text-2xl font-black mb-10 border-l-8 border-slate-900 pl-6 uppercase tracking-tight">マスタデータ管理</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                        <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-sm">
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">地域マスタ</h3>
+                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-region" class="flex-1 border rounded-xl p-3 text-xs font-bold outline-none shadow-inner"><button onclick="addMaster('region')" class="bg-slate-900 text-white px-4 rounded-xl text-xs font-black">＋</button></div>
+                            <div id="settings-region-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
                         </div>
-                        <div class="bg-slate-50 p-4 rounded-2xl">
-                            <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">型番</h3>
-                            <div class="flex gap-1 mb-4"><input type="text" id="new-master-model" class="flex-1 border rounded-lg p-2 text-xs font-bold"><button onclick="addMaster('model')" class="bg-slate-800 text-white px-2 rounded-lg text-xs">＋</button></div>
-                            <div id="settings-model-list" class="space-y-1 max-h-40 overflow-y-auto"></div>
+                        <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-sm">
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">型番マスタ</h3>
+                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-model" class="flex-1 border rounded-xl p-3 text-xs font-bold outline-none shadow-inner"><button onclick="addMaster('model')" class="bg-slate-900 text-white px-4 rounded-xl text-xs font-black">＋</button></div>
+                            <div id="settings-model-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
                         </div>
-                        <div class="bg-red-50 p-4 rounded-2xl">
-                            <h3 class="text-[10px] font-black text-red-400 uppercase mb-4 tracking-widest">相乗り部門</h3>
-                            <div class="flex gap-1 mb-4"><input type="text" id="new-master-dept" class="flex-1 border rounded-lg p-2 text-xs font-bold"><button onclick="addMaster('dept')" class="bg-red-600 text-white px-2 rounded-lg text-xs">＋</button></div>
-                            <div id="settings-dept-list" class="space-y-1 max-h-40 overflow-y-auto"></div>
+                        <div class="bg-red-50 p-6 rounded-3xl border border-red-100 shadow-sm">
+                            <h3 class="text-[10px] font-black text-red-600 uppercase mb-4 tracking-widest">相乗り部門システム</h3>
+                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-dept" class="flex-1 border border-red-200 rounded-xl p-3 text-xs font-bold outline-none shadow-inner"><button onclick="addMaster('dept')" class="bg-red-600 text-white px-4 rounded-xl text-xs font-black">＋</button></div>
+                            <div id="settings-dept-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
                         </div>
-                        <div class="bg-slate-900 p-4 rounded-2xl text-white">
-                            <h3 class="text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest">最新FW指定</h3>
-                            <div class="space-y-2">
-                                <input type="text" id="new-master-latest-branch" class="w-full border-none rounded-lg p-2 text-xs font-bold bg-white/10 text-white" placeholder="系統(7.2)">
-                                <input type="text" id="new-master-latest-ver" class="w-full border-none rounded-lg p-2 text-xs font-bold bg-white/10 text-white" placeholder="最新(7.2.14)">
-                                <button onclick="addLatestFwMaster()" class="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-black">登録</button>
+                        <div class="bg-slate-900 p-6 rounded-3xl text-white shadow-xl">
+                            <h3 class="text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest">管理者指定最新FW</h3>
+                            <div class="space-y-3">
+                                <input type="text" id="new-master-latest-branch" class="w-full border-none rounded-xl p-3 text-xs font-bold bg-white/10 text-white placeholder-slate-500" placeholder="系統(7.2)">
+                                <input type="text" id="new-master-latest-ver" class="w-full border-none rounded-xl p-3 text-xs font-bold bg-white/10 text-white placeholder-slate-500" placeholder="最新(7.2.14)">
+                                <button onclick="addLatestFwMaster()" class="w-full bg-blue-600 text-white py-3 rounded-xl text-xs font-black hover:bg-blue-700 transition-all">登録保存</button>
                             </div>
-                            <div id="settings-latest-fw-list" class="mt-4 space-y-1"></div>
+                            <div id="settings-latest-fw-list" class="mt-6 space-y-2"></div>
                         </div>
                     </div>
-                    <div class="border-t pt-6">
-                        <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4">システムユーザー</h3>
-                        <div class="flex gap-2 mb-4">
-                            <input type="text" id="new-master-user" class="border rounded-lg p-2 text-xs font-bold" placeholder="ID">
-                            <input type="text" id="new-master-pass" class="border rounded-lg p-2 text-xs font-bold" placeholder="PW">
-                            <button onclick="addMasterUser()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-black">追加</button>
+                    <div class="border-t border-slate-100 pt-10">
+                        <h3 class="text-[10px] font-black text-slate-400 uppercase mb-6 tracking-widest">システム利用者管理</h3>
+                        <div class="flex gap-4 mb-8">
+                            <input type="text" id="new-master-user" class="border rounded-xl p-4 text-sm font-bold shadow-sm" placeholder="ユーザーID">
+                            <input type="text" id="new-master-pass" class="border rounded-xl p-4 text-sm font-bold shadow-sm" placeholder="パスワード">
+                            <button onclick="addMasterUser()" class="bg-indigo-600 text-white px-10 py-4 rounded-xl text-sm font-black hover:bg-indigo-700 transition-all shadow-lg">ユーザー追加</button>
                         </div>
-                        <div id="settings-user-list" class="grid grid-cols-4 gap-2"></div>
+                        <div id="settings-user-list" class="grid grid-cols-1 md:grid-cols-4 gap-4"></div>
                     </div>
                 </div>
             </div>
@@ -208,20 +239,20 @@
     </div>
 
     <div id="log-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden z-[150] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden">
-            <div class="bg-slate-900 p-6 text-white flex justify-between items-center">
-                <div><h3 id="log-modal-title" class="text-xl font-black">作業履歴</h3><p id="log-modal-subtitle" class="text-xs text-slate-500 font-bold mt-1"></p></div>
-                <button onclick="closeLogModal()" class="text-2xl hover:text-red-500">&times;</button>
+        <div class="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden">
+            <div class="bg-slate-900 p-8 text-white flex justify-between items-center">
+                <div><h3 id="log-modal-title" class="text-2xl font-black">作業履歴</h3><p id="log-modal-subtitle" class="text-xs text-slate-500 font-bold mt-2 uppercase tracking-widest"></p></div>
+                <button onclick="closeLogModal()" class="text-3xl hover:text-red-500 transition-colors font-thin">&times;</button>
             </div>
-            <div class="p-6">
-                <div class="bg-slate-50 p-4 rounded-xl mb-4">
-                    <div class="grid grid-cols-3 gap-2">
-                        <select id="log-input-action" class="border rounded-lg p-2 text-sm font-bold bg-white"><option value="FW更新">FW更新</option><option value="設定変更">設定変更</option><option value="障害対応">障害対応</option></select>
-                        <input type="text" id="log-input-note" class="col-span-2 border rounded-lg p-2 text-sm font-bold bg-white" placeholder="作業メモ...">
-                        <button onclick="addLogEntry()" class="col-span-3 bg-red-600 text-white font-black py-2 rounded-lg">履歴保存</button>
+            <div class="p-8">
+                <div class="bg-slate-50 p-6 rounded-[2rem] mb-6 shadow-inner border border-slate-100">
+                    <div class="grid grid-cols-3 gap-3">
+                        <select id="log-input-action" class="border rounded-2xl p-4 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-red-500 appearance-none"><option value="FW更新">FW更新</option><option value="設定変更">設定変更</option><option value="障害対応">障害対応</option><option value="定期点検">定期点検</option></select>
+                        <input type="text" id="log-input-note" class="col-span-2 border rounded-2xl p-4 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-red-500" placeholder="作業のメモを入力...">
+                        <button onclick="addLogEntry()" class="col-span-3 bg-red-600 text-white font-black py-4 rounded-2xl hover:bg-red-700 transition-all shadow-xl">履歴を追加</button>
                     </div>
                 </div>
-                <div id="log-timeline-container" class="relative border-l-2 border-slate-100 ml-4 space-y-4 max-h-[400px] overflow-y-auto pr-2"></div>
+                <div id="log-timeline-container" class="relative border-l-4 border-slate-100 ml-6 space-y-6 max-h-[400px] overflow-y-auto pr-4 pb-4"></div>
             </div>
         </div>
     </div>
@@ -230,6 +261,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Firebase Configuration (※APIキーなどは前回維持)
         const firebaseConfig = {
             apiKey: "AIzaSyA1natPUopWd-2SlfOAzJULYiSlJudm2Rs",
             authDomain: "fg-delivery-master.firebaseapp.com",
@@ -261,15 +293,14 @@
         const ADMIN_PW = "komayuu28";
 
         // ==========================================
-        // 解析エンジン (最新RSS取得)
+        // PSIRT解析・ニュース
         // ==========================================
         window.runPsirtDeepScan = async () => {
             const badge = document.getElementById('scan-badge');
             const container = document.getElementById('news-container');
-            badge.innerText = "SCANNING..."; badge.className = "bg-blue-600 px-4 py-1 rounded-full text-[10px] font-black online";
+            badge.innerText = "SCANNING..."; badge.className = "bg-blue-600 px-6 py-2 rounded-full text-[10px] font-black online";
 
             try {
-                // キャッシュ回避のためクエリ追加
                 const rssUrl = `https://www.fortiguard.com/rss/ir.xml?t=${Date.now()}`;
                 const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`);
                 const data = await res.json();
@@ -286,26 +317,26 @@
                         if (combined.includes('vulnerability') || combined.includes('critical')) vulnSet.add(v);
                         if (!latestMap[branch] || patch > parseInt(latestMap[branch].split('.')[2])) latestMap[branch] = v;
                     });
-                    return `<div class="bg-white p-6 rounded-2xl border border-l-8 border-indigo-500 shadow-sm">
-                        <div class="text-[9px] text-slate-400 font-black mb-1">${item.pubDate}</div>
-                        <h4 class="font-black text-sm text-slate-800 mb-3">${item.title}</h4>
-                        <a href="${item.link}" target="_blank" class="text-[10px] bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg font-black inline-block">詳細レポート <i class="fas fa-external-link-alt"></i></a>
+                    return `<div class="bg-white p-8 rounded-[2rem] border border-l-8 border-indigo-500 shadow-sm hover:shadow-md transition-all">
+                        <div class="text-[9px] text-slate-400 font-black mb-2 uppercase tracking-widest">${item.pubDate}</div>
+                        <h4 class="font-black text-sm text-slate-800 leading-snug mb-4">${item.title}</h4>
+                        <a href="${item.link}" target="_blank" class="text-[10px] bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl font-black inline-block hover:bg-indigo-100 transition-colors">OFFICIAL REPORT <i class="fas fa-external-link-alt ml-1"></i></a>
                     </div>`;
                 }).join('');
 
                 window.autoLatestFw = latestMap;
                 window.autoDetectedVuln = Array.from(vulnSet);
-                document.getElementById('auto-fw-list').innerHTML = Object.entries(latestMap).map(([b,v])=>`<div>${b}.x -> <span class="text-green-400">${v}</span></div>`).join('');
-                document.getElementById('auto-vuln-list').innerHTML = window.autoDetectedVuln.map(v=>`<span class="bg-red-500/20 text-red-200 text-[10px] px-2 py-0.5 rounded font-black">${v}</span>`).join('');
-                badge.innerText = "ONLINE"; badge.className = "bg-green-500 px-4 py-1 rounded-full text-[10px] font-black online";
+                document.getElementById('auto-fw-list').innerHTML = Object.entries(latestMap).map(([b,v])=>`<div>Branch ${b} -> <span class="text-green-400">${v}</span></div>`).join('');
+                document.getElementById('auto-vuln-list').innerHTML = window.autoDetectedVuln.map(v=>`<span class="bg-red-500/20 text-red-200 text-[10px] px-3 py-1 rounded font-black">${v}</span>`).join('');
+                badge.innerText = "LIVE FEED: ONLINE"; badge.className = "bg-green-600 px-6 py-2 rounded-full text-[10px] font-black online";
                 calculateDashboard(); renderTable();
             } catch (e) {
-                badge.innerText = "OFFLINE"; badge.className = "bg-red-600 px-4 py-1 rounded-full text-[10px] font-black online";
+                badge.innerText = "FEED: OFFLINE"; badge.className = "bg-red-600 px-6 py-2 rounded-full text-[10px] font-black online";
             }
         };
 
         // ==========================================
-        // Firebase コア
+        // ログイン・認証・マスタ同期
         // ==========================================
         onSnapshot(masterDoc, (snap) => {
             if (snap.exists()) {
@@ -316,7 +347,6 @@
                 window.masterVuln = d.vuln || [];
                 window.masterLatestFw = d.latestFw || {};
                 window.masterUsers = d.users || [];
-                // マスタ読み込み後にUI（datalistやselect）を更新
                 updateDynamicLists();
                 if(!document.getElementById('main-app').classList.contains('hidden')) refreshAllUI();
             } else { saveMasters(); }
@@ -341,7 +371,7 @@
 
         function refreshAllUI() {
             renderTable(); renderMasterLists(); calculateDashboard();
-            document.getElementById('manual-fw-display').innerHTML = Object.entries(window.masterLatestFw).map(([b,v])=>`<div class="flex justify-between text-xs p-2 bg-slate-50 border rounded-xl font-bold"><span>${b}.x</span> <span class="text-blue-600">${v}</span></div>`).join('');
+            document.getElementById('manual-fw-display').innerHTML = Object.entries(window.masterLatestFw).map(([b,v])=>`<div class="flex justify-between text-xs p-3 bg-slate-50 border rounded-2xl font-bold border-slate-100"><span>${b}.x</span> <span class="text-blue-600 font-black">${v}</span></div>`).join('');
         }
 
         function calculateDashboard() {
@@ -364,13 +394,13 @@
         }
 
         // ==========================================
-        // データ操作
+        // インベントリ一覧
         // ==========================================
         window.renderTable = () => {
             const term = document.getElementById('search-input').value.toLowerCase();
             const tbody = document.getElementById('inventory-tbody');
             const vulns = [...window.masterVuln, ...window.autoDetectedVuln];
-            let list = window.inventoryData.filter(i => (i.customer||"").toLowerCase().includes(term) || (i.serial||"").toLowerCase().includes(term));
+            let list = window.inventoryData.filter(i => (i.customer||"").toLowerCase().includes(term) || (i.serial||"").toLowerCase().includes(term) || (i.fw_version||"").toLowerCase().includes(term));
             
             if(window.searchFilterType === 'vuln') list = list.filter(i => vulns.includes(i.fw_version));
             if(window.searchFilterType === 'update') {
@@ -385,33 +415,36 @@
             tbody.innerHTML = list.map(item => {
                 const isV = vulns.includes(item.fw_version);
                 const isAuto = item.auto_fw === "ON";
-                const rowCls = isV ? (isAuto ? 'auto-fw-active-row' : 'alert-row') : 'hover:bg-slate-50';
+                const rowCls = isV ? (isAuto ? 'auto-fw-active-row' : 'alert-row') : 'hover:bg-slate-50/50 transition-colors';
 
                 let badge = "";
                 const m = (item.fw_version||"").match(/^(\d+\.\d+)\.(\d+)$/);
                 if(m) {
                     const l = window.masterLatestFw[m[1]] || window.autoLatestFw[m[1]];
-                    if(l && parseInt(l.split('.')[2]) > parseInt(m[2])) badge = `<div class="text-[9px] text-blue-600 font-black mt-1 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 flex items-center w-fit">最新推奨: ${l}</div>`;
+                    if(l && parseInt(l.split('.')[2]) > parseInt(m[2])) badge = `<div class="text-[9px] text-blue-600 font-black mt-2 bg-blue-50 px-3 py-1 rounded-full border border-blue-100 flex items-center w-fit shadow-sm"><i class="fas fa-arrow-up mr-1"></i>LATEST: ${l}</div>`;
                 }
 
-                return `<tr class="${rowCls} group transition-all">
-                    <td class="px-6 py-4 font-black text-slate-800">${item.customer}<br><span class="text-[10px] text-slate-400">${item.region||'-'}</span></td>
-                    <td class="px-6 py-4 font-bold text-xs">${item.model||'-'}<br><span class="text-[10px] text-slate-400 font-mono">${item.serial||'-'}</span></td>
-                    <td class="px-6 py-4 font-mono text-xs text-slate-500">${item.ip||'-'}</td>
-                    <td class="px-6 py-4"><span class="${isV?'text-red-600 font-black':'font-black text-slate-700'}">${item.fw_version||'-'}</span>${badge}</td>
-                    <td class="px-6 py-4"><span class="text-[10px] font-black px-2 py-1 rounded-full ${isAuto?'bg-green-100 text-green-600':'bg-slate-100 text-slate-400'}">${item.auto_fw||'未設定'}</span></td>
-                    <td class="px-6 py-4"><div class="flex flex-wrap">${(item.depts||[]).map(d=>`<span class="dept-tag">${d}</span>`).join('')}</div></td>
-                    <td class="px-6 py-4 text-center">
-                        <div class="flex justify-center space-x-2">
-                            <button onclick="openLogModal('${item.id}')" class="text-slate-400 hover:text-slate-900"><i class="fas fa-history"></i></button>
-                            <button onclick="editData('${item.id}')" class="text-blue-400 hover:text-blue-600"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteData('${item.id}')" class="text-red-300 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>
+                return `<tr class="${rowCls} group">
+                    <td class="px-8 py-6"><span class="font-black text-slate-800 text-sm">${item.customer}</span><br><span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">${item.region||'-'}</span></td>
+                    <td class="px-8 py-6"><span class="font-bold text-xs text-slate-600">${item.model||'-'}</span><br><span class="text-[10px] text-slate-400 font-mono tracking-tighter">${item.serial||'-'}</span></td>
+                    <td class="px-8 py-6 font-mono text-xs text-slate-500">${item.ip||'-'}</td>
+                    <td class="px-8 py-6"><span class="${isV?'text-red-600 font-black':'font-black text-slate-700'}">${item.fw_version||'-'}</span>${badge}</td>
+                    <td class="px-8 py-6"><span class="text-[10px] font-black px-3 py-1.5 rounded-full ${isAuto?'bg-green-100 text-green-600 border border-green-200':'bg-slate-100 text-slate-400'}">${item.auto_fw||'未設定'}</span></td>
+                    <td class="px-8 py-6"><div class="flex flex-wrap">${(item.depts||[]).map(d=>`<span class="dept-tag">${d}</span>`).join('')}</div></td>
+                    <td class="px-8 py-6 text-center">
+                        <div class="flex justify-center space-x-2 opacity-20 group-hover:opacity-100 transition-opacity">
+                            <button onclick="openLogModal('${item.id}')" class="w-10 h-10 bg-white border rounded-xl text-slate-400 hover:text-slate-900 transition-all shadow-sm"><i class="fas fa-history"></i></button>
+                            <button onclick="editData('${item.id}')" class="w-10 h-10 bg-white border rounded-xl text-blue-400 hover:text-blue-600 transition-all shadow-sm"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteData('${item.id}')" class="w-10 h-10 bg-white border rounded-xl text-red-300 hover:text-red-600 transition-all shadow-sm"><i class="fas fa-trash-alt"></i></button>
                         </div>
                     </td>
                 </tr>`;
             }).join('');
         };
 
+        // ==========================================
+        // CRUD & 部門タグ
+        // ==========================================
         window.saveData = async () => {
             const id = document.getElementById('edit-id').value;
             const item = {
@@ -461,7 +494,7 @@
             window.activeLogDeviceId = id;
             const i = window.inventoryData.find(x => x.id === id);
             document.getElementById('log-modal-title').innerText = i.customer;
-            document.getElementById('log-modal-subtitle').innerText = `${i.model} (${i.serial})`;
+            document.getElementById('log-modal-subtitle').innerText = `${i.model} (SN: ${i.serial})`;
             renderTimeline();
             document.getElementById('log-modal').classList.remove('hidden');
         };
@@ -477,17 +510,18 @@
         function renderTimeline() {
             const i = window.inventoryData.find(x => x.id === window.activeLogDeviceId);
             document.getElementById('log-timeline-container').innerHTML = (i.logs || []).slice().reverse().map(l => `
-                <div class="relative pl-6">
-                    <div class="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full bg-slate-900 border-2 border-white shadow-sm"></div>
-                    <div class="bg-white p-3 rounded-xl border border-slate-100 text-xs font-bold">
-                        <div class="flex justify-between text-slate-400 mb-1"><span>${l.date}</span><span>${l.user}</span></div>
-                        <div class="text-slate-800">${l.action}: ${l.note}</div>
+                <div class="relative pl-10">
+                    <div class="absolute -left-[11px] top-1.5 w-5 h-5 rounded-full bg-slate-900 border-4 border-white shadow-md"></div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm text-xs font-bold">
+                        <div class="flex justify-between text-slate-400 mb-2 font-black uppercase tracking-widest"><span>${l.date}</span><span>BY ${l.user}</span></div>
+                        <div class="text-slate-800 text-sm mb-1">${l.action}</div>
+                        <div class="text-slate-500">${l.note}</div>
                     </div>
                 </div>`).join('');
         }
 
         // ==========================================
-        // マスタ管理
+        // 管理者マスタ管理
         // ==========================================
         async function saveMasters() {
             await setDoc(masterDoc, { regions: window.masterRegions, models: window.masterModels, depts: window.masterDepts, vuln: window.masterVuln, latestFw: window.masterLatestFw, users: window.masterUsers });
@@ -517,20 +551,13 @@
             if(u && p) { window.masterUsers.push({user:u, pass:p}); saveMasters(); }
         };
 
-        // ==========================================
-        // UI 動的更新 (最重要: ここで予測入力を紐付け)
-        // ==========================================
+        // UI動的制御
         window.updateDynamicLists = () => {
-            // datalistの更新
             document.getElementById('region-options').innerHTML = window.masterRegions.map(r => `<option value="${r}">`).join('');
             document.getElementById('model-options').innerHTML = window.masterModels.map(m => `<option value="${m}">`).join('');
-            
-            // 相乗り部門セレクトボックスの更新
             const select = document.getElementById('reg-dept-select');
-            select.innerHTML = '<option value="">部門システムを選択してください...</option>' + 
-                window.masterDepts.map(d => `<option value="${d}">${d}</option>`).join('');
+            select.innerHTML = '<option value="">登録済みの部門システムを選択...</option>' + window.masterDepts.map(d => `<option value="${d}">${d}</option>`).join('');
         };
-
         window.addDeptTag = () => {
             const val = document.getElementById('reg-dept-select').value;
             if(val && !window.selectedDepts.includes(val)) {
@@ -540,33 +567,33 @@
         };
         window.updateDeptTags = () => {
             document.getElementById('selected-depts').innerHTML = window.selectedDepts.map(s => `
-                <span class="dept-tag bg-white shadow-sm">${s} 
-                    <i class="fas fa-times cursor-pointer ml-1 text-red-300" onclick="removeDeptTag('${s}')"></i>
+                <span class="dept-tag bg-white shadow-sm border-slate-200">${s} 
+                    <i class="fas fa-times cursor-pointer ml-2 text-red-300 hover:text-red-500" onclick="removeDeptTag('${s}')"></i>
                 </span>`).join('');
         };
         window.removeDeptTag = (s) => { window.selectedDepts = window.selectedDepts.filter(x=>x!==s); updateDeptTags(); };
 
         window.renderMasterLists = () => {
-            const d = (arr, t) => arr.map(i => `<div class="flex justify-between bg-white p-2 border rounded-xl mb-1 text-[10px] font-black shadow-sm"><span>${i}</span><button onclick="removeMaster('${t}','${i}')" class="text-red-300">&times;</button></div>`).join('');
+            const d = (arr, t) => arr.map(i => `<div class="flex justify-between bg-white p-2 border rounded-xl mb-1 text-[10px] font-black shadow-sm"><span>${i}</span><button onclick="removeMaster('${t}','${i}')" class="text-red-300 hover:text-red-500">&times;</button></div>`).join('');
             document.getElementById('settings-region-list').innerHTML = d(window.masterRegions, 'region');
             document.getElementById('settings-model-list').innerHTML = d(window.masterModels, 'model');
             document.getElementById('settings-dept-list').innerHTML = d(window.masterDepts, 'dept');
-            document.getElementById('settings-latest-fw-list').innerHTML = Object.entries(window.masterLatestFw).map(([b,v])=>`<div class="bg-white/10 p-2 rounded-lg text-[10px] flex justify-between"><span>${b}.x -> ${v}</span><button onclick="delete window.masterLatestFw['${b}']; saveMasters();" class="text-red-400">&times;</button></div>`).join('');
-            document.getElementById('settings-user-list').innerHTML = window.masterUsers.map(u => `<div class="bg-white p-2 border rounded-lg text-[10px] flex justify-between"><span>${u.user}</span><button onclick="window.masterUsers=window.masterUsers.filter(x=>x.user!=='${u.user}'); saveMasters();" class="text-red-400">&times;</button></div>`).join('');
+            document.getElementById('settings-latest-fw-list').innerHTML = Object.entries(window.masterLatestFw).map(([b,v])=>`<div class="bg-white/10 p-2 rounded-lg text-[10px] font-bold flex justify-between shadow-sm border border-white/5"><span>${b}.x -> ${v}</span><button onclick="delete window.masterLatestFw['${b}']; saveMasters();" class="text-red-400 hover:text-red-600">&times;</button></div>`).join('');
+            document.getElementById('settings-user-list').innerHTML = window.masterUsers.map(u => `<div class="bg-white p-3 border rounded-xl text-[10px] font-bold flex justify-between shadow-sm"><span>ID: ${u.user}</span><button onclick="window.masterUsers=window.masterUsers.filter(x=>x.user!=='${u.user}'); saveMasters();" class="text-red-400 hover:text-red-600"><i class="fas fa-user-minus"></i></button></div>`).join('');
         };
 
         window.switchTab = (t) => {
             ['list', 'register', 'news', 'settings'].forEach(x => {
                 document.getElementById(`content-${x}`).classList.add('hidden');
-                document.getElementById(`tab-${x}`).className = "px-6 py-2 rounded-lg font-black text-slate-500 transition-all";
+                document.getElementById(`tab-${x}`).className = "px-8 py-2.5 rounded-xl font-black text-slate-500 hover:text-slate-800 transition-all";
             });
             document.getElementById(`content-${t}`).classList.remove('hidden');
-            document.getElementById(`tab-${t}`).className = "px-6 py-2 rounded-lg font-black tab-active transition-all";
+            document.getElementById(`tab-${t}`).className = "px-8 py-2.5 rounded-xl font-black tab-active transition-all shadow-sm";
         };
         window.setSearchFilter = (t) => { window.searchFilterType = t; document.getElementById('clear-filter-btn').classList.remove('hidden'); renderTable(); };
         window.clearSearchFilter = () => { window.searchFilterType = null; document.getElementById('clear-filter-btn').classList.add('hidden'); renderTable(); };
         window.cancelEdit = () => { document.getElementById('edit-id').value = ""; document.getElementById('form-title').innerText = "機器情報の登録"; document.getElementById('cancel-edit-btn').classList.add('hidden'); window.selectedDepts = []; updateDeptTags(); };
-        window.enterSettings = () => { if(prompt("管理者PW") === ADMIN_PW) { document.getElementById('tab-settings').classList.remove('hidden'); switchTab('settings'); } };
+        window.enterSettings = () => { if(prompt("管理者パスワードを入力してください") === ADMIN_PW) { document.getElementById('tab-settings').classList.remove('hidden'); switchTab('settings'); } };
     </script>
 </body>
 </html>
