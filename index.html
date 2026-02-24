@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FortiGate納品機器管理マスタ v26</title>
+    <title>FortiGate納品機器管理マスタ v26.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -23,7 +23,7 @@
         
         /* テーブル横スクロール対応 */
         .table-container { overflow-x: auto; width: 100%; border-radius: 2rem; background: white; }
-        table { min-width: 1200px; } /* 情報量に合わせて最小幅を確保 */
+        table { min-width: 1400px; } /* パスワード追加に伴い最小幅を少し拡張 */
         .sticky-col { position: sticky; left: 0; background: white; z-index: 10; border-right: 1px solid #f1f5f9; }
         .alert-row .sticky-col { background-color: #fff1f2; }
         .auto-fw-active-row .sticky-col { background-color: #f0fdf4; }
@@ -106,6 +106,7 @@
                                 <th class="px-6 py-5">使用用途</th>
                                 <th class="px-6 py-5">型番 / SN</th>
                                 <th class="px-6 py-5">管理IP</th>
+                                <th class="px-6 py-5">パスワード</th>
                                 <th class="px-6 py-5">FW Ver</th>
                                 <th class="px-6 py-5">最終更新日</th>
                                 <th class="px-6 py-5">自動FW</th>
@@ -140,6 +141,8 @@
                         <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">シリアルナンバー</label><input type="text" id="reg-serial" class="w-full border border-slate-200 rounded-2xl p-4 font-mono font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner"></div>
                         
                         <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">管理IP</label><input type="text" id="reg-ip" class="w-full border border-slate-200 rounded-2xl p-4 font-mono font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner"></div>
+                        <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">管理パスワード</label><input type="text" id="reg-pass" class="w-full border border-slate-200 rounded-2xl p-4 font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner"></div>
+                        
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">使用用途</label>
                             <select id="reg-usage" class="w-full border border-slate-200 rounded-2xl p-4 font-bold bg-white focus:ring-2 focus:ring-red-500 outline-none shadow-inner appearance-none">
@@ -463,6 +466,7 @@
                         <span class="text-[10px] text-slate-400 font-mono">${item.serial||'-'}</span>
                     </td>
                     <td class="px-6 py-5 font-mono text-xs text-slate-500 whitespace-nowrap">${item.ip||'-'}</td>
+                    <td class="px-6 py-5 font-mono text-xs text-slate-500 whitespace-nowrap">${item.password||'-'}</td>
                     <td class="px-6 py-5">
                         <span class="${isV?'text-red-600 font-black':'font-black text-slate-700'}">${item.fw_version||'-'}</span><br>${badge}
                     </td>
@@ -504,6 +508,7 @@
                 model: document.getElementById('reg-model').value,
                 serial: document.getElementById('reg-serial').value,
                 ip: document.getElementById('reg-ip').value,
+                password: document.getElementById('reg-pass').value,
                 usage: document.getElementById('reg-usage').value,
                 fw_version: document.getElementById('reg-fw-ver').value,
                 fw_updated_at: document.getElementById('reg-fw-date').value,
@@ -530,6 +535,7 @@
             document.getElementById('reg-model').value = i.model || "";
             document.getElementById('reg-serial').value = i.serial || "";
             document.getElementById('reg-ip').value = i.ip || "";
+            document.getElementById('reg-pass').value = i.password || "";
             document.getElementById('reg-usage').value = i.usage || "";
             document.getElementById('reg-fw-ver').value = i.fw_version || "";
             document.getElementById('reg-fw-date').value = i.fw_updated_at || "";
@@ -658,7 +664,21 @@
 
         window.setSearchFilter = (t) => { window.searchFilterType = t; document.getElementById('clear-filter-btn').classList.remove('hidden'); renderTable(); };
         window.clearSearchFilter = () => { window.searchFilterType = null; document.getElementById('clear-filter-btn').classList.add('hidden'); renderTable(); };
-        window.cancelEdit = () => { document.getElementById('edit-id').value = ""; document.getElementById('form-title').innerText = "機器情報の登録"; document.getElementById('cancel-edit-btn').classList.add('hidden'); window.selectedDepts = []; updateDeptTags(); };
+        window.cancelEdit = () => { 
+            document.getElementById('edit-id').value = ""; 
+            document.getElementById('form-title').innerText = "機器情報の登録"; 
+            document.getElementById('cancel-edit-btn').classList.add('hidden'); 
+            document.getElementById('reg-customer').value = "";
+            document.getElementById('reg-region').value = "";
+            document.getElementById('reg-model').value = "";
+            document.getElementById('reg-serial').value = "";
+            document.getElementById('reg-ip').value = "";
+            document.getElementById('reg-pass').value = "";
+            document.getElementById('reg-fw-ver').value = "";
+            document.getElementById('reg-fw-date').value = "";
+            window.selectedDepts = []; 
+            updateDeptTags(); 
+        };
         
         window.enterSettings = () => {
             if(prompt("管理者パスワードを入力してください") === ADMIN_PW) {
