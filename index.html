@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FortiGate納品機器管理マスタ v25</title>
+    <title>FortiGate納品機器管理マスタ v26</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -54,7 +54,7 @@
                         <span class="text-xl font-black tracking-tighter uppercase">FortiGate 納品機器管理マスタ</span>
                         <div class="flex items-center space-x-1">
                             <span class="w-1.5 h-1.5 bg-green-500 rounded-full sync-dot"></span>
-                            <span class="text-[9px] text-slate-500 font-bold uppercase">Connected to Cloud</span>
+                            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">クラウド同期中</span>
                         </div>
                     </div>
                 </div>
@@ -98,6 +98,7 @@
                                 <th class="px-8 py-5">納品先 / 地域</th>
                                 <th class="px-8 py-5">型番 / SN</th>
                                 <th class="px-8 py-5">管理IP</th>
+                                <th class="px-8 py-5">管理パスワード</th>
                                 <th class="px-8 py-5">FW Ver</th>
                                 <th class="px-8 py-5">自動FW</th>
                                 <th class="px-8 py-5">相乗り部門</th>
@@ -128,7 +129,7 @@
                         </div>
                         <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">シリアルナンバー</label><input type="text" id="reg-serial" class="w-full border border-slate-200 rounded-2xl p-4 font-mono font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner"></div>
                         <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">管理IP</label><input type="text" id="reg-ip" class="w-full border border-slate-200 rounded-2xl p-4 font-mono font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner"></div>
-                        <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">管理パスワード</label><input type="text" id="reg-password" class="w-full border border-slate-200 rounded-2xl p-4 font-mono font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner"></div>
+                        <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">管理パスワード</label><input type="text" id="reg-password" class="w-full border border-slate-200 rounded-2xl p-4 font-mono font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner" placeholder="機器へのログインパスワード"></div>
                         
                         <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">FWバージョン</label><input type="text" id="reg-fw-ver" class="w-full border border-slate-200 rounded-2xl p-4 font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner" placeholder="7.2.4"></div>
                         <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">FW最終更新日</label><input type="date" id="reg-fw-date" class="w-full border border-slate-200 rounded-2xl p-4 font-bold focus:ring-2 focus:ring-red-500 outline-none shadow-inner"></div>
@@ -286,6 +287,7 @@
         window.activeLogDeviceId = null;
         window.searchFilterType = null;
         const ADMIN_PW = "komayuu28";
+        const REVEAL_PW = "sigma-sol2012";
 
         // PSIRT取得
         window.runPsirtDeepScan = async () => {
@@ -379,6 +381,17 @@
             document.getElementById('stat-auto-count').innerText = aCnt;
         }
 
+        // パスワード閲覧用
+        window.revealPassword = (id) => {
+            const i = window.inventoryData.find(x => x.id === id);
+            const input = prompt("管理パスワードを閲覧するには閲覧用パスワードを入力してください");
+            if (input === REVEAL_PW) {
+                alert(`納品先: ${i.customer}\n管理パスワード: ${i.password || '設定なし'}`);
+            } else if (input !== null) {
+                alert("閲覧パスワードが正しくありません。");
+            }
+        };
+
         // テーブル描画
         window.renderTable = () => {
             const term = document.getElementById('search-input').value.toLowerCase();
@@ -410,6 +423,11 @@
                     <td class="px-8 py-6"><span class="font-black text-slate-800 text-sm">${item.customer}</span><br><span class="text-[10px] text-slate-400 font-bold uppercase">${item.region||'-'}</span></td>
                     <td class="px-8 py-6"><span class="font-bold text-xs text-slate-600">${item.model||'-'}</span><br><span class="text-[10px] text-slate-400 font-mono">${item.serial||'-'}</span></td>
                     <td class="px-8 py-6 font-mono text-xs text-slate-500">${item.ip||'-'}</td>
+                    <td class="px-8 py-6">
+                        <button onclick="revealPassword('${item.id}')" class="text-slate-400 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center">
+                            <i class="fas fa-eye mr-2"></i> ********
+                        </button>
+                    </td>
                     <td class="px-8 py-6"><span class="${isV?'text-red-600 font-black':'font-black text-slate-700'}">${item.fw_version||'-'}</span>${badge}</td>
                     <td class="px-8 py-6"><span class="text-[10px] font-black px-3 py-1.5 rounded-full ${isAuto?'bg-green-100 text-green-600 border border-green-200':'bg-slate-100 text-slate-400'}">${item.auto_fw||'未設定'}</span></td>
                     <td class="px-8 py-6"><div class="flex flex-wrap">${(item.depts||[]).map(d=>`<span class="dept-tag">${d}</span>`).join('')}</div></td>
