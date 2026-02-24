@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FortiGate納品機器管理マスタ v25</title>
+    <title>FortiGate納品機器管理マスタ v26</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
         body { font-family: 'Noto Sans JP', sans-serif; background-color: #f1f5f9; color: #1e293b; }
         .tab-active { border-bottom: 4px solid #dc2626; color: #dc2626; background-color: #fff; }
-        .dept-tag { display: inline-flex; align-items: center; background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 6px; margin: 2px; font-size: 0.75rem; border: 1px solid #fecaca; font-weight: bold; }
+        .dept-tag { display: inline-flex; align-items: center; background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 6px; margin: 2px; font-size: 0.75rem; border: 1px solid #fecaca; font-weight: bold; white-space: nowrap; }
         .online { background-color: #10b981; box-shadow: 0 0 10px #10b981; animation: pulse 2s infinite; }
         .offline { background-color: #ef4444; }
         .alert-row { background-color: #fff1f2 !important; border-left: 4px solid #ef4444; }
@@ -20,6 +20,13 @@
         @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         .sync-dot { animation: syncPulse 1.5s infinite; }
         @keyframes syncPulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        
+        /* テーブル横スクロール対応 */
+        .table-container { overflow-x: auto; width: 100%; border-radius: 2rem; background: white; }
+        table { min-width: 1200px; } /* 情報量に合わせて最小幅を確保 */
+        .sticky-col { position: sticky; left: 0; background: white; z-index: 10; border-right: 1px solid #f1f5f9; }
+        .alert-row .sticky-col { background-color: #fff1f2; }
+        .auto-fw-active-row .sticky-col { background-color: #f0fdf4; }
     </style>
 </head>
 <body class="min-h-screen">
@@ -91,17 +98,20 @@
                     </div>
                     <button onclick="clearSearchFilter()" id="clear-filter-btn" class="hidden bg-slate-900 text-white px-6 py-4 rounded-2xl font-black hover:bg-red-600 transition-all shadow-lg">フィルタ解除 &times;</button>
                 </div>
-                <div class="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">
-                    <table class="w-full text-left">
+                <div class="table-container shadow-xl border border-slate-100">
+                    <table class="w-full text-left border-collapse">
                         <thead class="bg-slate-50 text-[11px] font-black text-slate-500 border-b border-slate-100 uppercase tracking-tighter">
                             <tr>
-                                <th class="px-8 py-5">納品先 / 地域</th>
-                                <th class="px-8 py-5">型番 / SN</th>
-                                <th class="px-8 py-5">管理IP</th>
-                                <th class="px-8 py-5">FW Ver</th>
-                                <th class="px-8 py-5">自動FW</th>
-                                <th class="px-8 py-5">相乗り部門</th>
-                                <th class="px-8 py-5 text-center">操作</th>
+                                <th class="px-6 py-5 sticky-col">納品先 / 地域</th>
+                                <th class="px-6 py-5">使用用途</th>
+                                <th class="px-6 py-5">型番 / SN</th>
+                                <th class="px-6 py-5">管理IP</th>
+                                <th class="px-6 py-5">FW Ver</th>
+                                <th class="px-6 py-5">最終更新日</th>
+                                <th class="px-6 py-5">自動FW</th>
+                                <th class="px-6 py-5">適用設定</th>
+                                <th class="px-6 py-5">相乗り部門</th>
+                                <th class="px-6 py-5 text-center">操作</th>
                             </tr>
                         </thead>
                         <tbody id="inventory-tbody" class="divide-y divide-slate-50 text-sm"></tbody>
@@ -409,7 +419,7 @@
             document.getElementById('stat-auto-count').innerText = aCnt;
         }
 
-        // テーブル描画
+        // テーブル描画 (全項目展開Ver)
         window.renderTable = () => {
             const term = document.getElementById('search-input').value.toLowerCase();
             const tbody = document.getElementById('inventory-tbody');
@@ -430,41 +440,55 @@
                 const isV = vulns.includes(item.fw_version);
                 const isAuto = item.auto_fw === "ON";
                 const rowCls = isV ? (isAuto ? 'auto-fw-active-row' : 'alert-row') : 'hover:bg-slate-50/50 transition-colors';
+                
                 let badge = "";
                 const m = (item.fw_version||"").match(/^(\d+\.\d+)\.(\d+)$/);
                 if(m) {
                     const l = window.masterLatestFw[m[1]] || window.autoLatestFw[m[1]];
-                    if(l && parseInt(l.split('.')[2]) > parseInt(m[2])) badge = `<div class="text-[9px] text-blue-600 font-black mt-2 bg-blue-50 px-3 py-1 rounded-full border border-blue-100 flex items-center w-fit">LATEST: ${l}</div>`;
-                }
-                
-                // 自動FWの詳細（時間や日数）
-                let autoFwDetails = "";
-                if (isAuto && (item.auto_fw_delay || item.auto_fw_time_start)) {
-                    autoFwDetails = `<div class="mt-2 text-[9px] text-slate-500 font-bold leading-tight">
-                        ${item.auto_fw_delay ? item.auto_fw_delay + '日後' : ''}<br>
-                        ${item.auto_fw_time_start || ''}${item.auto_fw_time_start && item.auto_fw_time_end ? ' - ' : ''}${item.auto_fw_time_end || ''}
-                    </div>`;
+                    if(l && parseInt(l.split('.')[2]) > parseInt(m[2])) {
+                        badge = `<div class="text-[9px] text-blue-600 font-black mt-1.5 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 inline-block">LATEST: ${l}</div>`;
+                    }
                 }
 
                 return `<tr class="${rowCls} group">
-                    <td class="px-8 py-6">
-                        <span class="font-black text-slate-800 text-sm">${item.customer}</span><br>
+                    <td class="px-6 py-5 sticky-col">
+                        <span class="font-black text-slate-800 text-sm block">${item.customer}</span>
                         <span class="text-[10px] text-slate-400 font-bold uppercase">${item.region||'-'}</span>
-                        ${item.usage ? `<span class="ml-2 text-[9px] bg-indigo-50 text-indigo-500 border border-indigo-100 px-1.5 py-0.5 rounded font-black">${item.usage}</span>` : ''}
                     </td>
-                    <td class="px-8 py-6"><span class="font-bold text-xs text-slate-600">${item.model||'-'}</span><br><span class="text-[10px] text-slate-400 font-mono">${item.serial||'-'}</span></td>
-                    <td class="px-8 py-6 font-mono text-xs text-slate-500">${item.ip||'-'}</td>
-                    <td class="px-8 py-6"><span class="${isV?'text-red-600 font-black':'font-black text-slate-700'}">${item.fw_version||'-'}</span>${badge}</td>
-                    <td class="px-8 py-6">
-                        <span class="text-[10px] font-black px-3 py-1.5 rounded-full ${isAuto?'bg-green-100 text-green-600 border border-green-200':'bg-slate-100 text-slate-400'}">${item.auto_fw||'未設定'}</span>
-                        ${autoFwDetails}
+                    <td class="px-6 py-5">
+                        ${item.usage ? `<span class="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded font-black whitespace-nowrap">${item.usage}</span>` : '<span class="text-slate-300">-</span>'}
                     </td>
-                    <td class="px-8 py-6"><div class="flex flex-wrap">${(item.depts||[]).map(d=>`<span class="dept-tag">${d}</span>`).join('')}</div></td>
-                    <td class="px-8 py-6 text-center">
-                        <div class="flex justify-center space-x-2 opacity-20 group-hover:opacity-100 transition-opacity">
-                            <button onclick="openLogModal('${item.id}')" class="w-10 h-10 bg-white border rounded-xl text-slate-400 hover:text-slate-900"><i class="fas fa-history"></i></button>
-                            <button onclick="editData('${item.id}')" class="w-10 h-10 bg-white border rounded-xl text-blue-400 hover:text-blue-600"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteData('${item.id}')" class="w-10 h-10 bg-white border rounded-xl text-red-300 hover:text-red-600"><i class="fas fa-trash-alt"></i></button>
+                    <td class="px-6 py-5 whitespace-nowrap">
+                        <span class="font-bold text-xs text-slate-600 block">${item.model||'-'}</span>
+                        <span class="text-[10px] text-slate-400 font-mono">${item.serial||'-'}</span>
+                    </td>
+                    <td class="px-6 py-5 font-mono text-xs text-slate-500 whitespace-nowrap">${item.ip||'-'}</td>
+                    <td class="px-6 py-5">
+                        <span class="${isV?'text-red-600 font-black':'font-black text-slate-700'}">${item.fw_version||'-'}</span><br>${badge}
+                    </td>
+                    <td class="px-6 py-5 whitespace-nowrap">
+                        <span class="text-xs font-bold text-slate-500">${item.fw_updated_at || '<span class="text-slate-300">未登録</span>'}</span>
+                    </td>
+                    <td class="px-6 py-5">
+                        <span class="text-[10px] font-black px-3 py-1.5 rounded-full whitespace-nowrap ${isAuto?'bg-green-100 text-green-600 border border-green-200':'bg-slate-100 text-slate-400'}">
+                            ${item.auto_fw||'未設定'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-5 whitespace-nowrap">
+                        <div class="text-[10px] font-bold text-slate-500 leading-relaxed">
+                            ${item.auto_fw_delay ? `<i class="fas fa-calendar-alt mr-1"></i> ${item.auto_fw_delay}日後<br>` : ''}
+                            ${item.auto_fw_time_start ? `<i class="fas fa-clock mr-1"></i> ${item.auto_fw_time_start} - ${item.auto_fw_time_end}` : ''}
+                            ${!item.auto_fw_delay && !item.auto_fw_time_start ? '<span class="text-slate-300">-</span>' : ''}
+                        </div>
+                    </td>
+                    <td class="px-6 py-5">
+                        <div class="flex flex-wrap max-w-[200px]">${(item.depts||[]).map(d=>`<span class="dept-tag">${d}</span>`).join('')}</div>
+                    </td>
+                    <td class="px-6 py-5 text-center">
+                        <div class="flex justify-center space-x-1 opacity-20 group-hover:opacity-100 transition-opacity">
+                            <button onclick="openLogModal('${item.id}')" class="w-8 h-8 bg-white border rounded-lg text-slate-400 hover:text-slate-900" title="履歴"><i class="fas fa-history text-xs"></i></button>
+                            <button onclick="editData('${item.id}')" class="w-8 h-8 bg-white border rounded-lg text-blue-400 hover:text-blue-600" title="編集"><i class="fas fa-edit text-xs"></i></button>
+                            <button onclick="deleteData('${item.id}')" class="w-8 h-8 bg-white border rounded-lg text-red-300 hover:text-red-600" title="削除"><i class="fas fa-trash-alt text-xs"></i></button>
                         </div>
                     </td>
                 </tr>`;
@@ -615,25 +639,20 @@
             document.getElementById('settings-user-list').innerHTML = window.masterUsers.map(u => `<div class="bg-white p-3 border rounded-xl text-[10px] font-bold flex justify-between"><span>ID: ${u.user}</span><button onclick="window.masterUsers=window.masterUsers.filter(x=>x.user!=='${u.user}'); saveMasters();" class="text-red-400"><i class="fas fa-user-minus"></i></button></div>`).join('');
         };
 
-        // タブ切り替えロジック
+        // タブ切り替え
         window.switchTab = (t) => {
             ['list', 'register', 'news', 'settings'].forEach(id => {
                 const el = document.getElementById(`content-${id}`);
                 if (el) el.classList.add('hidden');
-                
                 const btn = document.getElementById(`tab-${id}`);
                 if (btn) btn.className = "px-8 py-2.5 rounded-xl font-black text-slate-500 hover:text-slate-800 transition-all";
             });
-
             const targetContent = document.getElementById(`content-${t}`);
             if (targetContent) targetContent.classList.remove('hidden');
-
             const targetBtn = document.getElementById(`tab-${t}`);
             if (targetBtn) {
                 targetBtn.className = "px-8 py-2.5 rounded-xl font-black tab-active transition-all shadow-sm";
-                if (t === 'settings') {
-                    targetBtn.style.display = 'block';
-                }
+                if (t === 'settings') targetBtn.style.display = 'block';
             }
         };
 
