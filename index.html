@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FortiGate納品機器管理マスタ v31</title>
+    <title>FortiGate納品機器管理マスタ v32</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -72,7 +72,7 @@
 
         /* 入力フィールドの視認性向上 */
         input, select, textarea {
-            border: 1.5px solid #cbd5e1 !important; 
+            border: 2px solid #cbd5e1 !important; 
             transition: all 0.2s;
         }
         input:focus, select:focus {
@@ -82,8 +82,8 @@
         }
         
         label {
-            color: #475569 !important; 
-            font-weight: 800 !important;
+            color: #1e293b !important; 
+            font-weight: 900 !important;
             margin-bottom: 0.5rem;
             display: block;
         }
@@ -137,10 +137,10 @@
 
         <div class="w-full px-8 py-8">
             <div id="dashboard-area" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-300"><p class="text-[10px] font-black text-slate-500 mb-2 uppercase tracking-widest">Total Devices</p><span class="text-3xl font-black text-slate-800" id="stat-total">0</span></div>
-                <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-300 cursor-pointer hover:bg-red-50 transition-colors" onclick="setSearchFilter('vuln')"><p class="text-[10px] font-black text-red-500 mb-2 uppercase tracking-widest">Vulnerabilities</p><span class="text-3xl font-black text-red-600" id="stat-vuln">0</span></div>
-                <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-300 cursor-pointer hover:bg-orange-50 transition-colors" onclick="setSearchFilter('update')"><p class="text-[10px] font-black text-orange-500 mb-2 uppercase tracking-widest">Pending Updates</p><span class="text-3xl font-black text-orange-600" id="stat-pending">0</span></div>
-                <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-300"><p class="text-[10px] font-black text-green-600 mb-2 uppercase tracking-widest">Auto FW Active</p><span class="text-3xl font-black text-green-600" id="stat-auto-count">0</span></div>
+                <div class="bg-white p-6 rounded-2xl shadow-md border-2 border-slate-300"><p class="text-[10px] font-black text-slate-500 mb-2 uppercase tracking-widest">Total Devices</p><span class="text-3xl font-black text-slate-800" id="stat-total">0</span></div>
+                <div class="bg-white p-6 rounded-2xl shadow-md border-2 border-slate-300 cursor-pointer hover:bg-red-50 transition-colors" onclick="setSearchFilter('vuln')"><p class="text-[10px] font-black text-red-500 mb-2 uppercase tracking-widest">Vulnerabilities</p><span class="text-3xl font-black text-red-600" id="stat-vuln">0</span></div>
+                <div class="bg-white p-6 rounded-2xl shadow-md border-2 border-slate-300 cursor-pointer hover:bg-orange-50 transition-colors" onclick="setSearchFilter('update')"><p class="text-[10px] font-black text-orange-500 mb-2 uppercase tracking-widest">Pending Updates</p><span class="text-3xl font-black text-orange-600" id="stat-pending">0</span></div>
+                <div class="bg-white p-6 rounded-2xl shadow-md border-2 border-slate-300"><p class="text-[10px] font-black text-green-600 mb-2 uppercase tracking-widest">Auto FW Active</p><span class="text-3xl font-black text-green-600" id="stat-auto-count">0</span></div>
             </div>
 
             <div class="flex space-x-2 mb-8 bg-slate-300 p-1.5 rounded-2xl w-fit shadow-inner">
@@ -158,9 +158,9 @@
                     </div>
                     <button onclick="clearSearchFilter()" id="clear-filter-btn" class="hidden bg-slate-900 text-white px-6 py-4 rounded-2xl font-black hover:bg-red-600 transition-all shadow-lg">フィルタ解除 &times;</button>
                 </div>
-                <div class="bg-white rounded-[2rem] shadow-2xl border border-slate-300 overflow-hidden">
+                <div class="bg-white rounded-[2rem] shadow-2xl border-2 border-slate-300 overflow-hidden">
                     <table class="w-full text-left">
-                        <thead class="bg-slate-100 text-[11px] font-black text-slate-600 border-b border-slate-300 uppercase tracking-tighter">
+                        <thead class="bg-slate-100 text-[11px] font-black text-slate-600 border-b-2 border-slate-300 uppercase tracking-tighter">
                             <tr>
                                 <th class="px-8 py-5">納品先 / 地域</th>
                                 <th class="px-8 py-5">使用用途</th>
@@ -178,7 +178,7 @@
             </div>
 
             <div id="content-register" class="hidden">
-                <div class="max-w-5xl mx-auto bg-white p-10 rounded-[3rem] shadow-2xl border border-slate-300">
+                <div class="max-w-5xl mx-auto bg-white p-10 rounded-[3rem] shadow-2xl border-2 border-slate-300">
                     <h2 id="form-title" class="text-3xl font-black mb-10 border-l-8 border-red-600 pl-6 text-slate-800 uppercase tracking-tight">機器情報の登録</h2>
                     <input type="hidden" id="edit-id" value="">
                     
@@ -190,7 +190,7 @@
                             <datalist id="region-options"></datalist>
                         </div>
 
-                        <div class="md:col-span-2 space-y-4 bg-slate-50 p-6 rounded-[2rem] border border-slate-200">
+                        <div class="md:col-span-2 space-y-4 bg-slate-50 p-6 rounded-[2rem] border-2 border-slate-200">
                             <label class="!mb-0">使用用途 (複数選択可)</label>
                             <div class="flex flex-wrap gap-3">
                                 <button onclick="toggleUsage('VPN')" id="btn-usage-VPN" class="usage-btn px-6 py-2 rounded-xl border-2 border-slate-300 font-bold text-sm hover:bg-slate-200 transition-all bg-white">VPN</button>
@@ -229,12 +229,12 @@
                             <label>自動FW適用時間 (何時から何時の間)</label>
                             <div class="flex items-center gap-4">
                                 <div class="flex-1 relative">
-                                    <span class="absolute left-4 top-1 text-[9px] font-black text-slate-400 uppercase">Start</span>
+                                    <span class="absolute left-4 top-1 text-[9px] font-black text-slate-400 uppercase">開始時刻</span>
                                     <input type="time" id="reg-autofw-time-start" class="w-full rounded-2xl pt-6 pb-2 px-4 font-bold bg-white">
                                 </div>
                                 <span class="font-black text-slate-500 text-xl">～</span>
                                 <div class="flex-1 relative">
-                                    <span class="absolute left-4 top-1 text-[9px] font-black text-slate-400 uppercase">End</span>
+                                    <span class="absolute left-4 top-1 text-[9px] font-black text-slate-400 uppercase">終了時刻</span>
                                     <input type="time" id="reg-autofw-time-end" class="w-full rounded-2xl pt-6 pb-2 px-4 font-bold bg-white">
                                 </div>
                             </div>
@@ -248,7 +248,7 @@
                             </div>
                         </div>
                         <div class="md:col-span-2">
-                             <div id="selected-depts" class="flex flex-wrap p-6 bg-slate-100 rounded-[2rem] border border-dashed border-slate-300 mt-4 min-h-[80px]"></div>
+                             <div id="selected-depts" class="flex flex-wrap p-6 bg-slate-100 rounded-[2rem] border-2 border-dashed border-slate-300 mt-4 min-h-[80px]"></div>
                         </div>
                     </div>
                     <div class="mt-12 flex justify-end gap-4">
@@ -285,8 +285,8 @@
                         <div id="news-container" class="space-y-4"></div>
                     </div>
                     <div class="lg:col-span-4">
-                        <div class="bg-white p-8 rounded-[2.5rem] border border-slate-300 shadow-xl">
-                            <h3 class="font-black text-sm mb-6 border-b pb-4 text-slate-800">管理者推奨バージョン</h3>
+                        <div class="bg-white p-8 rounded-[2.5rem] border-2 border-slate-300 shadow-xl">
+                            <h3 class="font-black text-sm mb-6 border-b-2 pb-4 text-slate-800">管理者推奨バージョン</h3>
                             <div id="manual-fw-display" class="space-y-3"></div>
                         </div>
                     </div>
@@ -294,20 +294,20 @@
             </div>
 
             <div id="content-settings" class="hidden">
-                <div class="bg-white p-10 rounded-[3rem] border border-slate-300 shadow-2xl">
+                <div class="bg-white p-10 rounded-[3rem] border-2 border-slate-300 shadow-2xl">
                     <h2 class="text-2xl font-black mb-10 border-l-8 border-slate-900 pl-6 uppercase tracking-tight">マスタデータ管理</h2>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-                        <div class="bg-slate-50 p-6 rounded-3xl border border-slate-200">
+                        <div class="bg-slate-50 p-6 rounded-3xl border-2 border-slate-200">
                             <h3 class="text-[10px] font-black text-slate-500 uppercase mb-4">地域マスタ</h3>
                             <div class="flex gap-2 mb-4"><input type="text" id="new-master-region" class="flex-1 border rounded-xl p-3 text-xs font-bold outline-none bg-white"><button onclick="addMaster('region')" class="bg-slate-900 text-white px-4 rounded-xl text-xs font-black">＋</button></div>
                             <div id="settings-region-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
                         </div>
-                        <div class="bg-slate-50 p-6 rounded-3xl border border-slate-200">
+                        <div class="bg-slate-50 p-6 rounded-3xl border-2 border-slate-200">
                             <h3 class="text-[10px] font-black text-slate-500 uppercase mb-4">型番マスタ</h3>
                             <div class="flex gap-2 mb-4"><input type="text" id="new-master-model" class="flex-1 border rounded-xl p-3 text-xs font-bold outline-none bg-white"><button onclick="addMaster('model')" class="bg-slate-900 text-white px-4 rounded-xl text-xs font-black">＋</button></div>
                             <div id="settings-model-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
                         </div>
-                        <div class="bg-red-50 p-6 rounded-3xl border border-red-200">
+                        <div class="bg-red-50 p-6 rounded-3xl border-2 border-red-200">
                             <h3 class="text-[10px] font-black text-red-600 uppercase mb-4">相乗り部門システム</h3>
                             <div class="flex gap-2 mb-4"><input type="text" id="new-master-dept" class="flex-1 border border-red-200 rounded-xl p-3 text-xs font-bold outline-none bg-white"><button onclick="addMaster('dept')" class="bg-red-600 text-white px-4 rounded-xl text-xs font-black">＋</button></div>
                             <div id="settings-dept-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
@@ -328,13 +328,13 @@
     </div>
 
     <div id="log-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden z-[150] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden border border-slate-300">
+        <div class="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden border-2 border-slate-300">
             <div class="bg-slate-900 p-8 text-white flex justify-between items-center">
                 <div><h3 id="log-modal-title" class="text-2xl font-black">作業履歴</h3><p id="log-modal-subtitle" class="text-xs text-slate-500 font-bold mt-2 uppercase"></p></div>
                 <button onclick="closeLogModal()" class="text-3xl hover:text-red-500 transition-colors font-thin">&times;</button>
             </div>
             <div class="p-8">
-                <div class="bg-slate-100 p-6 rounded-[2rem] mb-6 border border-slate-200">
+                <div class="bg-slate-100 p-6 rounded-[2rem] mb-6 border-2 border-slate-200">
                     <div class="grid grid-cols-3 gap-3">
                         <select id="log-input-action" class="border rounded-2xl p-4 text-sm font-bold bg-white outline-none"><option value="FW更新">FW更新</option><option value="設定変更">設定変更</option><option value="障害対応">障害対応</option><option value="定期点検">定期点検</option></select>
                         <input type="text" id="log-input-note" class="col-span-2 border rounded-2xl p-4 text-sm font-bold bg-white outline-none" placeholder="メモを入力...">
@@ -371,14 +371,14 @@
         window.masterLatestFw = {};
         window.masterUsers = [];
         window.selectedDepts = [];
-        window.selectedUsage = []; // 使用用途の管理用
+        window.selectedUsage = []; 
         window.currentUser = "";
         window.activeLogDeviceId = null;
         window.searchFilterType = null;
         const ADMIN_PW = "komayuu28";
         const REVEAL_PW = "sigma-sol2012";
 
-        // 使用用途の切り替え
+        // 使用用途
         window.toggleUsage = (val) => {
             const index = window.selectedUsage.indexOf(val);
             if (index === -1) window.selectedUsage.push(val);
@@ -400,9 +400,8 @@
         }
 
         window.runPsirtDeepScan = async () => {
-            const badge = document.getElementById('scan-badge');
             const container = document.getElementById('news-container');
-            if(!badge) return;
+            if(!container) return;
             try {
                 const rssUrl = `https://www.fortiguard.com/rss/ir.xml?t=${Date.now()}`;
                 const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`);
@@ -429,9 +428,10 @@
                 document.getElementById('auto-fw-list').innerHTML = Object.entries(latestMap).map(([b,v])=>`<div>Branch ${b} -> <span class="text-green-500 font-bold">${v}</span></div>`).join('');
                 document.getElementById('auto-vuln-list').innerHTML = window.autoDetectedVuln.map(v=>`<span class="bg-red-600 text-white text-[10px] px-3 py-1 rounded font-black">${v}</span>`).join('');
                 calculateDashboard(); renderTable();
-            } catch (e) { }
+            } catch (e) { console.error(e); }
         };
 
+        // リアルタイム同期（マスター）
         onSnapshot(masterDoc, (snap) => {
             if (snap.exists()) {
                 const d = snap.data();
@@ -445,6 +445,7 @@
             } else { saveMasters(); }
         });
 
+        // ログイン
         window.attemptLogin = () => {
             const u = document.getElementById('login-user').value;
             const p = document.getElementById('login-pass').value;
@@ -454,6 +455,8 @@
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
                 document.getElementById('display-username').innerText = u;
+                
+                // リアルタイム同期（在庫・機器）
                 onSnapshot(inventoryCol, (snap) => {
                     window.inventoryData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     refreshAllUI();
@@ -492,21 +495,23 @@
                 btnElement.innerHTML = '<i class="fas fa-eye mr-2"></i> ********';
                 return;
             }
-            const input = prompt("管理パスワードを閲覧するには閲覧用パスワードを入力してください");
+            const input = prompt("管理パスワードを表示するには、閲覧用パスワードを入力してください");
             if (input === REVEAL_PW) {
                 btnElement.innerHTML = `<i class="fas fa-eye-slash mr-2"></i> ${i.password || '未設定'}`;
-            } else if (input !== null) { alert("閲覧用パスワードが違います。"); }
+            } else if (input !== null) { alert("パスワードが違います。"); }
         };
 
+        // 一覧レンダリング
         window.renderTable = () => {
             const term = document.getElementById('search-input').value.toLowerCase();
             const tbody = document.getElementById('inventory-tbody');
+            if(!tbody) return;
             const vulns = [...(window.masterVuln || []), ...(window.autoDetectedVuln || [])];
             let list = window.inventoryData.filter(i => 
                 (i.customer||"").toLowerCase().includes(term) || 
                 (i.serial||"").toLowerCase().includes(term) || 
                 (i.region||"").toLowerCase().includes(term) ||
-                (i.usage||[]).join(',').includes(term)
+                (i.usage && i.usage.join(',').includes(term))
             );
             
             if(window.searchFilterType === 'vuln') list = list.filter(i => vulns.includes(i.fw_version));
@@ -532,13 +537,13 @@
 
                 const timeStr = (item.auto_fw_time_start && item.auto_fw_time_end) ? `${item.auto_fw_time_start} ～ ${item.auto_fw_time_end}` : "-";
 
-                return `<tr class="${rowCls} group">
+                return `<tr class="${rowCls} group border-b border-slate-200">
                     <td class="px-8 py-6"><span class="font-black text-slate-900 text-sm">${item.customer}</span><br><span class="text-[10px] text-slate-500 font-black uppercase">${item.region||'-'}</span></td>
                     <td class="px-8 py-6"><div class="flex flex-wrap">${(item.usage||[]).map(u=>`<span class="usage-tag">${u}</span>`).join('')}</div></td>
                     <td class="px-8 py-6"><span class="font-bold text-xs text-slate-700">${item.model||'-'}</span><br><span class="text-[10px] text-slate-500 font-mono">${item.serial||'-'}</span></td>
                     <td class="px-8 py-6">
                         <div class="text-[10px] font-mono font-bold text-slate-600 mb-2">${item.ip||'-'}</div>
-                        <button onclick="revealPassword('${item.id}', this)" class="text-slate-500 bg-white border border-slate-300 px-4 py-2 rounded-xl text-[10px] font-black min-w-[100px] shadow-sm">
+                        <button onclick="revealPassword('${item.id}', this)" class="text-slate-500 bg-white border-2 border-slate-300 px-4 py-2 rounded-xl text-[10px] font-black min-w-[100px] shadow-sm">
                             <i class="fas fa-eye mr-2"></i> ********
                         </button>
                     </td>
@@ -550,21 +555,22 @@
                     <td class="px-8 py-6"><div class="flex flex-wrap">${(item.depts||[]).map(d=>`<span class="dept-tag">${d}</span>`).join('')}</div></td>
                     <td class="px-8 py-6 text-center">
                         <div class="flex justify-center space-x-2">
-                            <button onclick="openLogModal('${item.id}')" class="w-10 h-10 bg-white border-2 border-slate-200 rounded-xl text-slate-500 shadow-sm"><i class="fas fa-history"></i></button>
-                            <button onclick="editData('${item.id}')" class="w-10 h-10 bg-white border-2 border-slate-200 rounded-xl text-blue-500 shadow-sm"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteData('${item.id}')" class="w-10 h-10 bg-white border-2 border-slate-200 rounded-xl text-red-400 shadow-sm"><i class="fas fa-trash-alt"></i></button>
+                            <button onclick="openLogModal('${item.id}')" class="w-10 h-10 bg-white border-2 border-slate-200 rounded-xl text-slate-500 shadow-sm hover:border-slate-400"><i class="fas fa-history"></i></button>
+                            <button onclick="editData('${item.id}')" class="w-10 h-10 bg-white border-2 border-slate-200 rounded-xl text-blue-500 shadow-sm hover:border-blue-400"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteData('${item.id}')" class="w-10 h-10 bg-white border-2 border-slate-200 rounded-xl text-red-400 shadow-sm hover:border-red-400"><i class="fas fa-trash-alt"></i></button>
                         </div>
                     </td>
                 </tr>`;
             }).join('');
         };
 
+        // 保存処理
         window.saveData = async () => {
             const id = document.getElementById('edit-id').value;
             const item = {
                 customer: document.getElementById('reg-customer').value,
                 region: document.getElementById('reg-region').value,
-                usage: [...window.selectedUsage], // 保存
+                usage: [...window.selectedUsage],
                 model: document.getElementById('reg-model').value,
                 serial: document.getElementById('reg-serial').value,
                 ip: document.getElementById('reg-ip').value,
@@ -578,20 +584,31 @@
                 depts: [...window.selectedDepts],
                 updatedAt: new Date()
             };
+            
             if(!item.customer) return alert("顧客名を入力してください");
+            
             try {
-                if(id) await updateDoc(doc(db, "inventory", id), item);
-                else await addDoc(inventoryCol, { ...item, logs: [] });
-                cancelEdit(); switchTab('list');
-            } catch (e) { alert(e); }
+                if(id) {
+                    await updateDoc(doc(db, "inventory", id), item);
+                } else {
+                    await addDoc(inventoryCol, { ...item, logs: [] });
+                }
+                // 保存完了後にクリアして一覧へ
+                cancelEdit();
+                switchTab('list');
+            } catch (e) { 
+                console.error("Save error:", e);
+                alert("保存に失敗しました: " + e.message); 
+            }
         };
 
         window.editData = (id) => {
             const i = window.inventoryData.find(x => x.id === id);
+            if(!i) return;
             document.getElementById('edit-id').value = id;
-            document.getElementById('reg-customer').value = i.customer;
+            document.getElementById('reg-customer').value = i.customer || "";
             document.getElementById('reg-region').value = i.region || "";
-            window.selectedUsage = [...(i.usage || [])]; // 反映
+            window.selectedUsage = [...(i.usage || [])]; 
             updateUsageUI();
             document.getElementById('reg-model').value = i.model || "";
             document.getElementById('reg-serial').value = i.serial || "";
@@ -601,8 +618,8 @@
             document.getElementById('reg-fw-date').value = i.fw_updated_at || "";
             document.getElementById('reg-autofw').value = i.auto_fw || "未設定";
             document.getElementById('reg-autofw-days').value = i.auto_fw_days || "";
-            document.getElementById('reg-autofw-time_start').value = i.auto_fw_time_start || "";
-            document.getElementById('reg-autofw-time_end').value = i.auto_fw_time_end || "";
+            document.getElementById('reg-autofw-time-start').value = i.auto_fw_time_start || "";
+            document.getElementById('reg-autofw-time-end').value = i.auto_fw_time_end || "";
             window.selectedDepts = [...(i.depts || [])];
             updateDeptTags();
             document.getElementById('form-title').innerText = "機器情報の編集";
@@ -610,8 +627,9 @@
             switchTab('register');
         };
 
-        window.deleteData = async (id) => { if(confirm("消去しますか？")) await deleteDoc(doc(db, "inventory", id)); };
+        window.deleteData = async (id) => { if(confirm("この機器情報を削除しますか？")) await deleteDoc(doc(db, "inventory", id)); };
 
+        // ログ機能
         window.openLogModal = (id) => {
             window.activeLogDeviceId = id;
             const i = window.inventoryData.find(x => x.id === id);
@@ -713,15 +731,31 @@
 
         window.setSearchFilter = (t) => { window.searchFilterType = t; document.getElementById('clear-filter-btn').classList.remove('hidden'); renderTable(); };
         window.clearSearchFilter = () => { window.searchFilterType = null; document.getElementById('clear-filter-btn').classList.add('hidden'); renderTable(); };
+        
+        // フォームのリセット処理
         window.cancelEdit = () => { 
             document.getElementById('edit-id').value = ""; 
             document.getElementById('form-title').innerText = "機器情報の登録"; 
             document.getElementById('cancel-edit-btn').classList.add('hidden'); 
+            
+            // 全入力フィールドのクリア
+            document.getElementById('reg-customer').value = "";
+            document.getElementById('reg-region').value = "";
+            document.getElementById('reg-model').value = "";
+            document.getElementById('reg-serial').value = "";
+            document.getElementById('reg-ip').value = "";
+            document.getElementById('reg-password').value = "";
+            document.getElementById('reg-fw-ver').value = "";
+            document.getElementById('reg-fw-date').value = "";
+            document.getElementById('reg-autofw').value = "未設定";
             document.getElementById('reg-autofw-days').value = "";
             document.getElementById('reg-autofw-time-start').value = "";
             document.getElementById('reg-autofw-time-end').value = "";
-            window.selectedUsage = []; updateUsageUI();
-            window.selectedDepts = []; updateDeptTags(); 
+            
+            window.selectedUsage = []; 
+            updateUsageUI();
+            window.selectedDepts = []; 
+            updateDeptTags(); 
         };
         
         window.enterSettings = () => {
