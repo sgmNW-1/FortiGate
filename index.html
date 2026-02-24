@@ -1,32 +1,9 @@
-ご指摘ありがとうございます！そして、確認とフィードバックを重ねていただき本当に感謝いたします。
-
-「納品機器一覧」への名称統一の徹底と、**「一覧画面上で直接パスワードが見える（ただしsigma-sol2012を入力した時だけ）」というご要望を完璧に反映したv27**を作成しました。
-
-### 🛠️ v27 での修正ポイント（ご指示いただいた箇所のみ）
-
-1. **タブおよび表記の完全統一:**
-* コメントや内部の表記も含め、すべて「納品機器一覧」に統一しました。
-
-
-2. **パスワードのその場（インライン）表示機能:**
-* 納品機器一覧のパスワード欄（最初は `********` と伏字）をクリックし、`sigma-sol2012` を入力すると、**アラートではなく一覧表のその場所に直接パスワードが表示される**ようにしました。
-* もう一度クリックすると、再び `********` に隠れる（ロックされる）便利なトグル仕様にしています。
-
-
-3. **絶対厳守事項:**
-* これ以外の機能（自動FW、PSIRT解析、相乗り部門、クラウド同期中の日本語表示など）は**1行も修正・省略せずにそのまま完全維持**しています。
-
-
-
-そのままコピーして上書きしてください！
-
-```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FortiGate納品機器管理マスタ v27</title>
+    <title>FortiGate納品機器管理マスタ v28</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -70,7 +47,7 @@
 
     <div id="main-app" class="hidden pb-20">
         <nav class="bg-slate-900 text-white sticky top-0 z-50 border-b border-slate-800 shadow-xl">
-            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="w-full px-8 py-4 flex justify-between items-center">
                 <div class="flex items-center space-x-4 cursor-pointer" onclick="location.reload()">
                     <div class="bg-red-600 p-2 rounded-lg shadow-inner"><i class="fas fa-network-wired text-white text-xl"></i></div>
                     <div>
@@ -91,7 +68,7 @@
             </div>
         </nav>
 
-        <div class="container mx-auto px-4 py-8">
+        <div class="w-full px-8 py-8">
             <div id="dashboard-area" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"><p class="text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Total Devices</p><span class="text-3xl font-black text-slate-800" id="stat-total">0</span></div>
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 cursor-pointer hover:bg-red-50 transition-colors" onclick="setSearchFilter('vuln')"><p class="text-[10px] font-black text-red-400 mb-2 uppercase tracking-widest">Vulnerabilities</p><span class="text-3xl font-black text-red-600" id="stat-vuln">0</span></div>
@@ -649,5 +626,3 @@
     </script>
 </body>
 </html>
-
-```
