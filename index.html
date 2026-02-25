@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FortiGate納品機器管理マスタ v32</title>
+    <title>FortiGate納品機器管理マスタ v33</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -106,7 +106,7 @@
             <div class="space-y-4">
                 <input type="text" id="login-user" placeholder="ユーザー名" class="w-full rounded-xl py-4 px-5 outline-none bg-slate-50 font-bold">
                 <input type="password" id="login-pass" placeholder="パスワード" class="w-full rounded-xl py-4 px-5 outline-none bg-slate-50 font-bold">
-                <button onclick="attemptLogin()" class="w-full bg-slate-900 text-white font-black py-4 rounded-xl shadow-xl hover:bg-red-600 transition-all transform hover:-translate-y-1">ログイン</button>
+                <button type="button" onclick="attemptLogin()" class="w-full bg-slate-900 text-white font-black py-4 rounded-xl shadow-xl hover:bg-red-600 transition-all transform hover:-translate-y-1">ログイン</button>
                 <div id="login-error" class="hidden text-center text-xs text-red-600 font-bold bg-red-50 p-3 rounded-xl border border-red-100">認証に失敗しました。</div>
             </div>
         </div>
@@ -130,7 +130,7 @@
                         <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Auth-User</p>
                         <span id="display-username" class="text-sm font-bold text-slate-200"></span>
                     </div>
-                    <button onclick="enterSettings()" class="bg-slate-800 p-3 rounded-xl text-slate-400 hover:text-white border border-slate-700 hover:border-slate-500"><i class="fas fa-cog"></i></button>
+                    <button type="button" onclick="enterSettings()" class="bg-slate-800 p-3 rounded-xl text-slate-400 hover:text-white border border-slate-700 hover:border-slate-500"><i class="fas fa-cog"></i></button>
                 </div>
             </div>
         </nav>
@@ -144,10 +144,10 @@
             </div>
 
             <div class="flex space-x-2 mb-8 bg-slate-300 p-1.5 rounded-2xl w-fit shadow-inner">
-                <button onclick="switchTab('list')" id="tab-list" class="px-8 py-2.5 rounded-xl font-black tab-active transition-all shadow-sm">納品機器一覧</button>
-                <button onclick="switchTab('register')" id="tab-register" class="px-8 py-2.5 rounded-xl font-black text-slate-600 hover:text-slate-900 transition-all">機器登録</button>
-                <button onclick="switchTab('news')" id="tab-news" class="px-8 py-2.5 rounded-xl font-black text-slate-600 hover:text-slate-900 transition-all flex items-center"><i class="fas fa-bolt mr-2 text-indigo-500"></i>解析・Auto FW</button>
-                <button id="tab-settings" class="hidden px-8 py-2.5 rounded-xl font-black text-slate-600 transition-all cursor-default" style="display: none;">管理者設定</button>
+                <button type="button" onclick="switchTab('list')" id="tab-list" class="px-8 py-2.5 rounded-xl font-black tab-active transition-all shadow-sm">納品機器一覧</button>
+                <button type="button" onclick="switchTab('register')" id="tab-register" class="px-8 py-2.5 rounded-xl font-black text-slate-600 hover:text-slate-900 transition-all">機器登録</button>
+                <button type="button" onclick="switchTab('news')" id="tab-news" class="px-8 py-2.5 rounded-xl font-black text-slate-600 hover:text-slate-900 transition-all flex items-center"><i class="fas fa-bolt mr-2 text-indigo-500"></i>解析・Auto FW</button>
+                <button type="button" id="tab-settings" class="hidden px-8 py-2.5 rounded-xl font-black text-slate-600 transition-all cursor-default" style="display: none;">管理者設定</button>
             </div>
 
             <div id="content-list">
@@ -156,7 +156,7 @@
                         <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
                         <input type="text" id="search-input" onkeyup="renderTable()" class="w-full rounded-2xl py-4 pl-12 pr-6 outline-none font-bold shadow-md focus:ring-4 focus:ring-red-500/10 transition-all bg-white" placeholder="顧客名、SN、使用用途、地域で検索...">
                     </div>
-                    <button onclick="clearSearchFilter()" id="clear-filter-btn" class="hidden bg-slate-900 text-white px-6 py-4 rounded-2xl font-black hover:bg-red-600 transition-all shadow-lg">フィルタ解除 &times;</button>
+                    <button type="button" onclick="clearSearchFilter()" id="clear-filter-btn" class="hidden bg-slate-900 text-white px-6 py-4 rounded-2xl font-black hover:bg-red-600 transition-all shadow-lg">フィルタ解除 &times;</button>
                 </div>
                 <div class="bg-white rounded-[2rem] shadow-2xl border-2 border-slate-300 overflow-hidden">
                     <table class="w-full text-left">
@@ -193,10 +193,10 @@
                         <div class="md:col-span-2 space-y-4 bg-slate-50 p-6 rounded-[2rem] border-2 border-slate-200">
                             <label class="!mb-0">使用用途 (複数選択可)</label>
                             <div class="flex flex-wrap gap-3">
-                                <button onclick="toggleUsage('VPN')" id="btn-usage-VPN" class="usage-btn px-6 py-2 rounded-xl border-2 border-slate-300 font-bold text-sm hover:bg-slate-200 transition-all bg-white">VPN</button>
-                                <button onclick="toggleUsage('ゲストWi-Fi')" id="btn-usage-ゲストWi-Fi" class="usage-btn px-6 py-2 rounded-xl border-2 border-slate-300 font-bold text-sm hover:bg-slate-200 transition-all bg-white">ゲストWi-Fi</button>
-                                <button onclick="toggleUsage('職員情報系')" id="btn-usage-職員情報系" class="usage-btn px-6 py-2 rounded-xl border-2 border-slate-300 font-bold text-sm hover:bg-slate-200 transition-all bg-white">職員情報系</button>
-                                <button onclick="toggleUsage('ホワイトリスト')" id="btn-usage-ホワイトリスト" class="usage-btn px-6 py-2 rounded-xl border-2 border-slate-300 font-bold text-sm hover:bg-slate-200 transition-all bg-white">ホワイトリスト</button>
+                                <button type="button" onclick="toggleUsage('VPN')" id="btn-usage-VPN" class="usage-btn px-6 py-2 rounded-xl border-2 border-slate-300 font-bold text-sm hover:bg-slate-200 transition-all bg-white">VPN</button>
+                                <button type="button" onclick="toggleUsage('ゲストWi-Fi')" id="btn-usage-ゲストWi-Fi" class="usage-btn px-6 py-2 rounded-xl border-2 border-slate-300 font-bold text-sm hover:bg-slate-200 transition-all bg-white">ゲストWi-Fi</button>
+                                <button type="button" onclick="toggleUsage('職員情報系')" id="btn-usage-職員情報系" class="usage-btn px-6 py-2 rounded-xl border-2 border-slate-300 font-bold text-sm hover:bg-slate-200 transition-all bg-white">職員情報系</button>
+                                <button type="button" onclick="toggleUsage('ホワイトリスト')" id="btn-usage-ホワイトリスト" class="usage-btn px-6 py-2 rounded-xl border-2 border-slate-300 font-bold text-sm hover:bg-slate-200 transition-all bg-white">ホワイトリスト</button>
                             </div>
                         </div>
 
@@ -244,7 +244,7 @@
                             <label>相乗り部門システム (マスタから選択)</label>
                             <div class="flex gap-4 mt-1">
                                 <select id="reg-dept-select" class="flex-1 rounded-2xl p-4 font-bold bg-white appearance-none"></select>
-                                <button onclick="addDeptTag()" class="bg-slate-900 text-white px-8 rounded-2xl font-black hover:bg-slate-700 transition-all shadow-lg whitespace-nowrap">追加</button>
+                                <button type="button" onclick="addDeptTag()" class="bg-slate-900 text-white px-8 rounded-2xl font-black hover:bg-slate-700 transition-all shadow-lg whitespace-nowrap">追加</button>
                             </div>
                         </div>
                         <div class="md:col-span-2">
@@ -252,8 +252,8 @@
                         </div>
                     </div>
                     <div class="mt-12 flex justify-end gap-4">
-                        <button id="cancel-edit-btn" onclick="cancelEdit()" class="hidden bg-slate-200 text-slate-600 px-10 py-4 rounded-2xl font-black hover:bg-slate-300 transition-all">キャンセル</button>
-                        <button onclick="saveData()" class="bg-red-600 text-white px-16 py-4 rounded-2xl font-black shadow-xl hover:bg-red-700 transition-all transform hover:scale-105 flex items-center">
+                        <button type="button" id="cancel-edit-btn" onclick="cancelEdit()" class="hidden bg-slate-200 text-slate-600 px-10 py-4 rounded-2xl font-black hover:bg-slate-300 transition-all">キャンセル</button>
+                        <button type="button" onclick="saveData()" class="bg-red-600 text-white px-16 py-4 rounded-2xl font-black shadow-xl hover:bg-red-700 transition-all transform hover:scale-105 flex items-center">
                             <i class="fas fa-cloud-upload-alt mr-3"></i> データベースへ保存
                         </button>
                     </div>
@@ -280,11 +280,12 @@
                                     </div>
                                 </div>
                             </div>
+                            <i class="fas fa-shield-virus absolute bottom--10 right--10 text-[15rem] text-white/5 rotate-12"></i>
                         </div>
-                        <h3 class="font-black text-xl mb-6 text-slate-700 px-4">FortiGuard セキュリティ勧告</h3>
+                        <h3 class="font-black text-xl mb-6 text-slate-700 flex items-center px-4"><i class="fas fa-rss text-orange-500 mr-3"></i>FortiGuard セキュリティ勧告</h3>
                         <div id="news-container" class="space-y-4"></div>
                     </div>
-                    <div class="lg:col-span-4">
+                    <div class="lg:col-span-4 space-y-6">
                         <div class="bg-white p-8 rounded-[2.5rem] border-2 border-slate-300 shadow-xl">
                             <h3 class="font-black text-sm mb-6 border-b-2 pb-4 text-slate-800">管理者推奨バージョン</h3>
                             <div id="manual-fw-display" class="space-y-3"></div>
@@ -299,17 +300,17 @@
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
                         <div class="bg-slate-50 p-6 rounded-3xl border-2 border-slate-200">
                             <h3 class="text-[10px] font-black text-slate-500 uppercase mb-4">地域マスタ</h3>
-                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-region" class="flex-1 border rounded-xl p-3 text-xs font-bold outline-none bg-white"><button onclick="addMaster('region')" class="bg-slate-900 text-white px-4 rounded-xl text-xs font-black">＋</button></div>
+                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-region" class="flex-1 border rounded-xl p-3 text-xs font-bold outline-none bg-white"><button type="button" onclick="addMaster('region')" class="bg-slate-900 text-white px-4 rounded-xl text-xs font-black">＋</button></div>
                             <div id="settings-region-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
                         </div>
                         <div class="bg-slate-50 p-6 rounded-3xl border-2 border-slate-200">
                             <h3 class="text-[10px] font-black text-slate-500 uppercase mb-4">型番マスタ</h3>
-                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-model" class="flex-1 border rounded-xl p-3 text-xs font-bold outline-none bg-white"><button onclick="addMaster('model')" class="bg-slate-900 text-white px-4 rounded-xl text-xs font-black">＋</button></div>
+                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-model" class="flex-1 border rounded-xl p-3 text-xs font-bold outline-none bg-white"><button type="button" onclick="addMaster('model')" class="bg-slate-900 text-white px-4 rounded-xl text-xs font-black">＋</button></div>
                             <div id="settings-model-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
                         </div>
                         <div class="bg-red-50 p-6 rounded-3xl border-2 border-red-200">
                             <h3 class="text-[10px] font-black text-red-600 uppercase mb-4">相乗り部門システム</h3>
-                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-dept" class="flex-1 border border-red-200 rounded-xl p-3 text-xs font-bold outline-none bg-white"><button onclick="addMaster('dept')" class="bg-red-600 text-white px-4 rounded-xl text-xs font-black">＋</button></div>
+                            <div class="flex gap-2 mb-4"><input type="text" id="new-master-dept" class="flex-1 border border-red-200 rounded-xl p-3 text-xs font-bold outline-none bg-white"><button type="button" onclick="addMaster('dept')" class="bg-red-600 text-white px-4 rounded-xl text-xs font-black">＋</button></div>
                             <div id="settings-dept-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
                         </div>
                         <div class="bg-slate-900 p-6 rounded-3xl text-white">
@@ -317,7 +318,7 @@
                             <div class="space-y-3">
                                 <input type="text" id="new-master-latest-branch" class="w-full border-none rounded-xl p-3 text-xs font-bold bg-white/10 text-white" placeholder="系統(7.2)">
                                 <input type="text" id="new-master-latest-ver" class="w-full border-none rounded-xl p-3 text-xs font-bold bg-white/10 text-white" placeholder="最新(7.2.14)">
-                                <button onclick="addLatestFwMaster()" class="w-full bg-blue-600 text-white py-3 rounded-xl text-xs font-black">登録保存</button>
+                                <button type="button" onclick="addLatestFwMaster()" class="w-full bg-blue-600 text-white py-3 rounded-xl text-xs font-black">登録保存</button>
                             </div>
                             <div id="settings-latest-fw-list" class="mt-6 space-y-2"></div>
                         </div>
@@ -331,14 +332,14 @@
         <div class="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden border-2 border-slate-300">
             <div class="bg-slate-900 p-8 text-white flex justify-between items-center">
                 <div><h3 id="log-modal-title" class="text-2xl font-black">作業履歴</h3><p id="log-modal-subtitle" class="text-xs text-slate-500 font-bold mt-2 uppercase"></p></div>
-                <button onclick="closeLogModal()" class="text-3xl hover:text-red-500 transition-colors font-thin">&times;</button>
+                <button type="button" onclick="closeLogModal()" class="text-3xl hover:text-red-500 transition-colors font-thin">&times;</button>
             </div>
             <div class="p-8">
                 <div class="bg-slate-100 p-6 rounded-[2rem] mb-6 border-2 border-slate-200">
                     <div class="grid grid-cols-3 gap-3">
                         <select id="log-input-action" class="border rounded-2xl p-4 text-sm font-bold bg-white outline-none"><option value="FW更新">FW更新</option><option value="設定変更">設定変更</option><option value="障害対応">障害対応</option><option value="定期点検">定期点検</option></select>
                         <input type="text" id="log-input-note" class="col-span-2 border rounded-2xl p-4 text-sm font-bold bg-white outline-none" placeholder="メモを入力...">
-                        <button onclick="addLogEntry()" class="col-span-3 bg-red-600 text-white font-black py-4 rounded-2xl shadow-xl">履歴を追加</button>
+                        <button type="button" onclick="addLogEntry()" class="col-span-3 bg-red-600 text-white font-black py-4 rounded-2xl shadow-xl">履歴を追加</button>
                     </div>
                 </div>
                 <div id="log-timeline-container" class="relative border-l-4 border-slate-200 ml-6 space-y-6 max-h-[400px] overflow-y-auto pr-4 pb-4"></div>
@@ -400,8 +401,9 @@
         }
 
         window.runPsirtDeepScan = async () => {
+            const badge = document.getElementById('scan-badge');
             const container = document.getElementById('news-container');
-            if(!container) return;
+            if(!badge) return;
             try {
                 const rssUrl = `https://www.fortiguard.com/rss/ir.xml?t=${Date.now()}`;
                 const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`);
@@ -507,11 +509,13 @@
             const tbody = document.getElementById('inventory-tbody');
             if(!tbody) return;
             const vulns = [...(window.masterVuln || []), ...(window.autoDetectedVuln || [])];
+            
+            // 検索フィルタリング
             let list = window.inventoryData.filter(i => 
                 (i.customer||"").toLowerCase().includes(term) || 
                 (i.serial||"").toLowerCase().includes(term) || 
                 (i.region||"").toLowerCase().includes(term) ||
-                (i.usage && i.usage.join(',').includes(term))
+                (i.usage && i.usage.join(',').toLowerCase().includes(term))
             );
             
             if(window.searchFilterType === 'vuln') list = list.filter(i => vulns.includes(i.fw_version));
@@ -543,7 +547,7 @@
                     <td class="px-8 py-6"><span class="font-bold text-xs text-slate-700">${item.model||'-'}</span><br><span class="text-[10px] text-slate-500 font-mono">${item.serial||'-'}</span></td>
                     <td class="px-8 py-6">
                         <div class="text-[10px] font-mono font-bold text-slate-600 mb-2">${item.ip||'-'}</div>
-                        <button onclick="revealPassword('${item.id}', this)" class="text-slate-500 bg-white border-2 border-slate-300 px-4 py-2 rounded-xl text-[10px] font-black min-w-[100px] shadow-sm">
+                        <button type="button" onclick="revealPassword('${item.id}', this)" class="text-slate-500 bg-white border-2 border-slate-300 px-4 py-2 rounded-xl text-[10px] font-black min-w-[100px] shadow-sm hover:text-slate-900">
                             <i class="fas fa-eye mr-2"></i> ********
                         </button>
                     </td>
@@ -555,9 +559,9 @@
                     <td class="px-8 py-6"><div class="flex flex-wrap">${(item.depts||[]).map(d=>`<span class="dept-tag">${d}</span>`).join('')}</div></td>
                     <td class="px-8 py-6 text-center">
                         <div class="flex justify-center space-x-2">
-                            <button onclick="openLogModal('${item.id}')" class="w-10 h-10 bg-white border-2 border-slate-200 rounded-xl text-slate-500 shadow-sm hover:border-slate-400"><i class="fas fa-history"></i></button>
-                            <button onclick="editData('${item.id}')" class="w-10 h-10 bg-white border-2 border-slate-200 rounded-xl text-blue-500 shadow-sm hover:border-blue-400"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteData('${item.id}')" class="w-10 h-10 bg-white border-2 border-slate-200 rounded-xl text-red-400 shadow-sm hover:border-red-400"><i class="fas fa-trash-alt"></i></button>
+                            <button type="button" onclick="openLogModal('${item.id}')" class="w-10 h-10 bg-white border-2 border-slate-200 rounded-xl text-slate-500 shadow-sm hover:border-slate-400"><i class="fas fa-history"></i></button>
+                            <button type="button" onclick="editData('${item.id}')" class="w-10 h-10 bg-white border-2 border-slate-200 rounded-xl text-blue-500 shadow-sm hover:border-blue-400"><i class="fas fa-edit"></i></button>
+                            <button type="button" onclick="deleteData('${item.id}')" class="w-10 h-10 bg-white border-2 border-slate-200 rounded-xl text-red-400 shadow-sm hover:border-red-400"><i class="fas fa-trash-alt"></i></button>
                         </div>
                     </td>
                 </tr>`;
@@ -582,7 +586,7 @@
                 auto_fw_time_start: document.getElementById('reg-autofw-time-start').value,
                 auto_fw_time_end: document.getElementById('reg-autofw-time-end').value,
                 depts: [...window.selectedDepts],
-                updatedAt: new Date()
+                updatedAt: new Date().toISOString()
             };
             
             if(!item.customer) return alert("顧客名を入力してください");
@@ -593,7 +597,9 @@
                 } else {
                     await addDoc(inventoryCol, { ...item, logs: [] });
                 }
-                // 保存完了後にクリアして一覧へ
+                
+                // 保存完了後にフィルター状態を確実リセット
+                window.clearSearchFilter();
                 cancelEdit();
                 switchTab('list');
             } catch (e) { 
@@ -707,11 +713,11 @@
         window.removeDeptTag = (s) => { window.selectedDepts = window.selectedDepts.filter(x=>x!==s); updateDeptTags(); };
 
         window.renderMasterLists = () => {
-            const d = (arr, t) => arr.map(i => `<div class="flex justify-between bg-white p-2 border-2 border-slate-200 rounded-xl mb-1 text-[10px] font-black"><span>${i}</span><button onclick="removeMaster('${t}','${i}')" class="text-red-400">&times;</button></div>`).join('');
+            const d = (arr, t) => arr.map(i => `<div class="flex justify-between bg-white p-2 border-2 border-slate-200 rounded-xl mb-1 text-[10px] font-black"><span>${i}</span><button type="button" onclick="removeMaster('${t}','${i}')" class="text-red-400">&times;</button></div>`).join('');
             document.getElementById('settings-region-list').innerHTML = d(window.masterRegions, 'region');
             document.getElementById('settings-model-list').innerHTML = d(window.masterModels, 'model');
             document.getElementById('settings-dept-list').innerHTML = d(window.masterDepts, 'dept');
-            document.getElementById('settings-latest-fw-list').innerHTML = Object.entries(window.masterLatestFw).map(([b,v])=>`<div class="bg-white/10 p-2 rounded-lg text-[10px] font-bold flex justify-between"><span>${b}.x -> ${v}</span><button onclick="delete window.masterLatestFw['${b}']; saveMasters();" class="text-red-400">&times;</button></div>`).join('');
+            document.getElementById('settings-latest-fw-list').innerHTML = Object.entries(window.masterLatestFw).map(([b,v])=>`<div class="bg-white/10 p-2 rounded-lg text-[10px] font-bold flex justify-between shadow-sm border border-white/20"><span>${b}.x -> ${v}</span><button type="button" onclick="delete window.masterLatestFw['${b}']; saveMasters();" class="text-red-400 hover:text-red-600">&times;</button></div>`).join('');
         };
 
         window.switchTab = (t) => {
@@ -729,8 +735,20 @@
             }
         };
 
-        window.setSearchFilter = (t) => { window.searchFilterType = t; document.getElementById('clear-filter-btn').classList.remove('hidden'); renderTable(); };
-        window.clearSearchFilter = () => { window.searchFilterType = null; document.getElementById('clear-filter-btn').classList.add('hidden'); renderTable(); };
+        // 検索フィルター強制リセット機能
+        window.setSearchFilter = (t) => { 
+            window.searchFilterType = t; 
+            document.getElementById('clear-filter-btn').classList.remove('hidden'); 
+            renderTable(); 
+        };
+        window.clearSearchFilter = () => { 
+            window.searchFilterType = null; 
+            const btn = document.getElementById('clear-filter-btn');
+            if(btn) btn.classList.add('hidden'); 
+            const input = document.getElementById('search-input');
+            if(input) input.value = "";
+            renderTable(); 
+        };
         
         // フォームのリセット処理
         window.cancelEdit = () => { 
@@ -738,7 +756,6 @@
             document.getElementById('form-title').innerText = "機器情報の登録"; 
             document.getElementById('cancel-edit-btn').classList.add('hidden'); 
             
-            // 全入力フィールドのクリア
             document.getElementById('reg-customer').value = "";
             document.getElementById('reg-region').value = "";
             document.getElementById('reg-model').value = "";
