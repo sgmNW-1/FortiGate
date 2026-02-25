@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FortiGate納品機器管理マスタ v33</title>
+    <title>FortiGate納品機器管理マスタ v34</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -510,13 +510,17 @@
             if(!tbody) return;
             const vulns = [...(window.masterVuln || []), ...(window.autoDetectedVuln || [])];
             
-            // 検索フィルタリング
-            let list = window.inventoryData.filter(i => 
-                (i.customer||"").toLowerCase().includes(term) || 
+            // 検索フィルタリング（過去データの互換性対応済み）
+            let list = window.inventoryData.filter(i => {
+                let uStr = "";
+                if (Array.isArray(i.usage)) uStr = i.usage.join(',');
+                else if (typeof i.usage === 'string') uStr = i.usage;
+                
+                return (i.customer||"").toLowerCase().includes(term) || 
                 (i.serial||"").toLowerCase().includes(term) || 
                 (i.region||"").toLowerCase().includes(term) ||
-                (i.usage && i.usage.join(',').toLowerCase().includes(term))
-            );
+                uStr.toLowerCase().includes(term);
+            });
             
             if(window.searchFilterType === 'vuln') list = list.filter(i => vulns.includes(i.fw_version));
             if(window.searchFilterType === 'update') {
@@ -541,9 +545,10 @@
 
                 const timeStr = (item.auto_fw_time_start && item.auto_fw_time_end) ? `${item.auto_fw_time_start} ～ ${item.auto_fw_time_end}` : "-";
 
+                // 過去データの互換性対応済み
                 return `<tr class="${rowCls} group border-b border-slate-200">
                     <td class="px-8 py-6"><span class="font-black text-slate-900 text-sm">${item.customer}</span><br><span class="text-[10px] text-slate-500 font-black uppercase">${item.region||'-'}</span></td>
-                    <td class="px-8 py-6"><div class="flex flex-wrap">${(item.usage||[]).map(u=>`<span class="usage-tag">${u}</span>`).join('')}</div></td>
+                    <td class="px-8 py-6"><div class="flex flex-wrap">${(Array.isArray(item.usage) ? item.usage : (item.usage ? [item.usage] : [])).map(u=>`<span class="usage-tag">${u}</span>`).join('')}</div></td>
                     <td class="px-8 py-6"><span class="font-bold text-xs text-slate-700">${item.model||'-'}</span><br><span class="text-[10px] text-slate-500 font-mono">${item.serial||'-'}</span></td>
                     <td class="px-8 py-6">
                         <div class="text-[10px] font-mono font-bold text-slate-600 mb-2">${item.ip||'-'}</div>
@@ -556,7 +561,7 @@
                         <span class="text-[10px] font-black px-3 py-1.5 rounded-full ${isAuto?'bg-green-600 text-white':'bg-slate-200 text-slate-500'}">${item.auto_fw||'未設定'}</span>
                         ${isAuto ? `<div class="text-[9px] font-black text-slate-500 mt-2">${timeStr} (${item.auto_fw_days}日後)</div>` : ""}
                     </td>
-                    <td class="px-8 py-6"><div class="flex flex-wrap">${(item.depts||[]).map(d=>`<span class="dept-tag">${d}</span>`).join('')}</div></td>
+                    <td class="px-8 py-6"><div class="flex flex-wrap">${(Array.isArray(item.depts) ? item.depts : (item.depts ? [item.depts] : [])).map(d=>`<span class="dept-tag">${d}</span>`).join('')}</div></td>
                     <td class="px-8 py-6 text-center">
                         <div class="flex justify-center space-x-2">
                             <button type="button" onclick="openLogModal('${item.id}')" class="w-10 h-10 bg-white border-2 border-slate-200 rounded-xl text-slate-500 shadow-sm hover:border-slate-400"><i class="fas fa-history"></i></button>
@@ -614,8 +619,13 @@
             document.getElementById('edit-id').value = id;
             document.getElementById('reg-customer').value = i.customer || "";
             document.getElementById('reg-region').value = i.region || "";
-            window.selectedUsage = [...(i.usage || [])]; 
+            
+            // 既存データが文字列の場合の対策
+            let currentUsage = i.usage || [];
+            if (typeof currentUsage === 'string') currentUsage = [currentUsage];
+            window.selectedUsage = [...currentUsage]; 
             updateUsageUI();
+            
             document.getElementById('reg-model').value = i.model || "";
             document.getElementById('reg-serial').value = i.serial || "";
             document.getElementById('reg-ip').value = i.ip || "";
@@ -626,8 +636,13 @@
             document.getElementById('reg-autofw-days').value = i.auto_fw_days || "";
             document.getElementById('reg-autofw-time-start').value = i.auto_fw_time_start || "";
             document.getElementById('reg-autofw-time-end').value = i.auto_fw_time_end || "";
-            window.selectedDepts = [...(i.depts || [])];
+            
+            // 既存データが文字列の場合の対策
+            let currentDepts = i.depts || [];
+            if (typeof currentDepts === 'string') currentDepts = [currentDepts];
+            window.selectedDepts = [...currentDepts];
             updateDeptTags();
+            
             document.getElementById('form-title').innerText = "機器情報の編集";
             document.getElementById('cancel-edit-btn').classList.remove('hidden');
             switchTab('register');
