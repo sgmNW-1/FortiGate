@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FortiGate納品機器管理マスタ v34</title>
+    <title>FortiGate納品機器管理マスタ v35</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -271,7 +271,7 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-8">
                                     <div class="bg-white/10 p-6 rounded-[2rem] border border-white/20 backdrop-blur-sm shadow-inner">
-                                        <p class="text-[10px] text-indigo-300 font-black mb-4 uppercase tracking-widest">Detected Latest (Auto)</p>
+                                        <p class="text-[10px] text-indigo-300 font-black mb-4 uppercase tracking-widest">Detected Latest (JVN)</p>
                                         <div id="auto-fw-list" class="text-sm font-bold space-y-2 text-indigo-100"></div>
                                     </div>
                                     <div class="bg-white/10 p-6 rounded-[2rem] border border-white/20 backdrop-blur-sm shadow-inner">
@@ -282,7 +282,7 @@
                             </div>
                             <i class="fas fa-shield-virus absolute bottom--10 right--10 text-[15rem] text-white/5 rotate-12"></i>
                         </div>
-                        <h3 class="font-black text-xl mb-6 text-slate-700 flex items-center px-4"><i class="fas fa-rss text-orange-500 mr-3"></i>FortiGuard セキュリティ勧告</h3>
+                        <h3 class="font-black text-xl mb-6 text-slate-700 px-4">公的機関 セキュリティ勧告 (JVN / IPA)</h3>
                         <div id="news-container" class="space-y-4"></div>
                     </div>
                     <div class="lg:col-span-4 space-y-6">
@@ -400,37 +400,99 @@
             });
         }
 
+        // ==========================================
+        // PSIRT取得 (JVN + IPA 統合版)
+        // ==========================================
         window.runPsirtDeepScan = async () => {
             const badge = document.getElementById('scan-badge');
             const container = document.getElementById('news-container');
             if(!badge) return;
+            badge.innerText = "SCANNING JVN & IPA..."; 
+            badge.className = "bg-blue-600 px-6 py-2 rounded-full text-[10px] font-black online";
+
             try {
-                const rssUrl = `https://www.fortiguard.com/rss/ir.xml?t=${Date.now()}`;
-                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`);
-                const data = await res.json();
+                // JVN: Fortinet製品に絞ったRSS
+                const jvnUrl = `https://jvndb.jvn.jp/myjvn?method=getVulnOverviewList&feed=rss&keyword=fortinet&t=${Date.now()}`;
+                // IPA: 重要なセキュリティ情報 (RSS)
+                const ipaUrl = `https://www.ipa.go.jp/security/rss/alert.rdf?t=${Date.now()}`;
+
+                const [jvnRes, ipaRes] = await Promise.all([
+                    fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(jvnUrl)}`).catch(() => null),
+                    fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(ipaUrl)}`).catch(() => null)
+                ]);
+
+                let combinedItems = [];
+                
+                // JVN処理
+                if (jvnRes && jvnRes.ok) {
+                    const jvnData = await jvnRes.json();
+                    if (jvnData.status === 'ok' && jvnData.items) {
+                        const jvnItems = jvnData.items.map(item => ({ ...item, source: 'JVN iPedia', type: 'メイン判定' }));
+                        combinedItems = combinedItems.concat(jvnItems);
+                    }
+                }
+
+                // IPA処理
+                if (ipaRes && ipaRes.ok) {
+                    const ipaData = await ipaRes.json();
+                    if (ipaData.status === 'ok' && ipaData.items) {
+                        const ipaItems = ipaData.items
+                            .filter(item => (item.title + " " + item.description).toLowerCase().includes('forti'))
+                            .map(item => ({ ...item, source: 'IPA 重要情報', type: '緊急警戒' }));
+                        combinedItems = combinedItems.concat(ipaItems);
+                    }
+                }
+
                 let latestMap = {};
                 let vulnSet = new Set();
-                container.innerHTML = data.items.map(item => {
-                    const combined = (item.title + " " + item.description).toLowerCase();
-                    const versions = combined.match(/\d+\.\d+\.\d+/g) || [];
-                    versions.forEach(v => {
-                        const [major, minor, patch] = v.split('.').map(n => parseInt(n));
-                        const branch = `${major}.${minor}`;
-                        if (combined.includes('vulnerability') || combined.includes('critical')) vulnSet.add(v);
-                        if (!latestMap[branch] || patch > parseInt(latestMap[branch].split('.')[2])) latestMap[branch] = v;
-                    });
-                    return `<div class="bg-white p-8 rounded-[2rem] border-2 border-indigo-500 shadow-md">
-                        <div class="text-[9px] text-slate-500 font-black mb-2 uppercase">${item.pubDate}</div>
-                        <h4 class="font-black text-sm text-slate-800 leading-snug mb-4">${item.title}</h4>
-                        <a href="${item.link}" target="_blank" class="text-[10px] bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl font-black inline-block border border-indigo-200">OFFICIAL REPORT</a>
-                    </div>`;
-                }).join('');
+
+                if (combinedItems.length > 0) {
+                    container.innerHTML = combinedItems.map(item => {
+                        const combined = (item.title + " " + item.description).toLowerCase();
+                        const versions = combined.match(/\d+\.\d+\.\d+/g) || [];
+                        versions.forEach(v => {
+                            const [major, minor, patch] = v.split('.').map(n => parseInt(n));
+                            const branch = `${major}.${minor}`;
+                            vulnSet.add(v);
+                            if (!latestMap[branch] || patch > parseInt(latestMap[branch].split('.')[2])) {
+                                latestMap[branch] = v;
+                            }
+                        });
+
+                        const sourceColor = item.source === 'JVN iPedia' ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-red-100 text-red-800 border-red-300';
+
+                        return `<div class="bg-white p-6 rounded-[2rem] border-2 border-slate-200 shadow-sm transition-all hover:shadow-md mb-4">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="text-[10px] px-3 py-1 rounded-lg font-black border ${sourceColor}">${item.source} (${item.type})</span>
+                                <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest">${item.pubDate ? item.pubDate.split(' ')[0] : ''}</div>
+                            </div>
+                            <h4 class="font-black text-sm text-slate-800 leading-snug mb-4">${item.title}</h4>
+                            <a href="${item.link}" target="_blank" class="text-[10px] bg-slate-50 text-slate-600 px-4 py-2 rounded-xl font-black inline-block border-2 border-slate-200 hover:bg-slate-100 transition-all">公式レポートを確認 <i class="fas fa-external-link-alt ml-1"></i></a>
+                        </div>`;
+                    }).join('');
+                } else {
+                    container.innerHTML = `<div class="p-8 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 text-slate-400 font-bold text-sm">現在、JVNおよびIPAにおいて、Fortinet関連の最新アラートは検知されていません。</div>`;
+                }
+
                 window.autoLatestFw = latestMap;
                 window.autoDetectedVuln = Array.from(vulnSet);
-                document.getElementById('auto-fw-list').innerHTML = Object.entries(latestMap).map(([b,v])=>`<div>Branch ${b} -> <span class="text-green-500 font-bold">${v}</span></div>`).join('');
-                document.getElementById('auto-vuln-list').innerHTML = window.autoDetectedVuln.map(v=>`<span class="bg-red-600 text-white text-[10px] px-3 py-1 rounded font-black">${v}</span>`).join('');
+                
+                document.getElementById('auto-fw-list').innerHTML = Object.entries(latestMap).length > 0 
+                    ? Object.entries(latestMap).map(([b,v])=>`<div>Branch ${b} -> <span class="text-green-500 font-bold">${v}</span></div>`).join('')
+                    : '<span class="text-slate-400 font-bold text-[10px]">自動検知なし</span>';
+                    
+                document.getElementById('auto-vuln-list').innerHTML = window.autoDetectedVuln.length > 0
+                    ? window.autoDetectedVuln.map(v=>`<span class="bg-red-600 text-white text-[10px] px-3 py-1 rounded font-black">${v}</span>`).join('')
+                    : '<span class="text-slate-400 font-bold text-[10px]">自動検知なし</span>';
+                    
+                badge.innerText = "LIVE FEED: ONLINE"; 
+                badge.className = "bg-green-500 px-6 py-2 rounded-full text-[10px] font-black online";
                 calculateDashboard(); renderTable();
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error(e);
+                badge.innerText = "FEED: OFFLINE"; 
+                badge.className = "bg-red-500 px-6 py-2 rounded-full text-[10px] font-black offline";
+            }
         };
 
         // リアルタイム同期（マスター）
@@ -510,7 +572,6 @@
             if(!tbody) return;
             const vulns = [...(window.masterVuln || []), ...(window.autoDetectedVuln || [])];
             
-            // 検索フィルタリング（過去データの互換性対応済み）
             let list = window.inventoryData.filter(i => {
                 let uStr = "";
                 if (Array.isArray(i.usage)) uStr = i.usage.join(',');
@@ -545,7 +606,6 @@
 
                 const timeStr = (item.auto_fw_time_start && item.auto_fw_time_end) ? `${item.auto_fw_time_start} ～ ${item.auto_fw_time_end}` : "-";
 
-                // 過去データの互換性対応済み
                 return `<tr class="${rowCls} group border-b border-slate-200">
                     <td class="px-8 py-6"><span class="font-black text-slate-900 text-sm">${item.customer}</span><br><span class="text-[10px] text-slate-500 font-black uppercase">${item.region||'-'}</span></td>
                     <td class="px-8 py-6"><div class="flex flex-wrap">${(Array.isArray(item.usage) ? item.usage : (item.usage ? [item.usage] : [])).map(u=>`<span class="usage-tag">${u}</span>`).join('')}</div></td>
@@ -603,7 +663,6 @@
                     await addDoc(inventoryCol, { ...item, logs: [] });
                 }
                 
-                // 保存完了後にフィルター状態を確実リセット
                 window.clearSearchFilter();
                 cancelEdit();
                 switchTab('list');
@@ -620,7 +679,6 @@
             document.getElementById('reg-customer').value = i.customer || "";
             document.getElementById('reg-region').value = i.region || "";
             
-            // 既存データが文字列の場合の対策
             let currentUsage = i.usage || [];
             if (typeof currentUsage === 'string') currentUsage = [currentUsage];
             window.selectedUsage = [...currentUsage]; 
@@ -637,7 +695,6 @@
             document.getElementById('reg-autofw-time-start').value = i.auto_fw_time_start || "";
             document.getElementById('reg-autofw-time-end').value = i.auto_fw_time_end || "";
             
-            // 既存データが文字列の場合の対策
             let currentDepts = i.depts || [];
             if (typeof currentDepts === 'string') currentDepts = [currentDepts];
             window.selectedDepts = [...currentDepts];
