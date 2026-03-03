@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FortiGate納品機器管理マスタ v35</title>
+    <title>FortiGate納品機器管理マスタ v36</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -70,7 +70,6 @@
         .sync-dot { animation: syncPulse 1.5s infinite; }
         @keyframes syncPulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
-        /* 入力フィールドの視認性向上 */
         input, select, textarea {
             border: 2px solid #cbd5e1 !important; 
             transition: all 0.2s;
@@ -271,11 +270,11 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-8">
                                     <div class="bg-white/10 p-6 rounded-[2rem] border border-white/20 backdrop-blur-sm shadow-inner">
-                                        <p class="text-[10px] text-indigo-300 font-black mb-4 uppercase tracking-widest">Detected Latest (JVN)</p>
+                                        <p class="text-[10px] text-indigo-300 font-black mb-4 uppercase tracking-widest">Detected Latest (JVN/IPA)</p>
                                         <div id="auto-fw-list" class="text-sm font-bold space-y-2 text-indigo-100"></div>
                                     </div>
                                     <div class="bg-white/10 p-6 rounded-[2rem] border border-white/20 backdrop-blur-sm shadow-inner">
-                                        <p class="text-[10px] text-indigo-300 font-black mb-4 uppercase tracking-widest">Critical Vuln FW</p>
+                                        <p class="text-[10px] text-indigo-300 font-black mb-4 uppercase tracking-widest">Critical Vuln FW (IPA Alert)</p>
                                         <div id="auto-vuln-list" class="flex flex-wrap gap-2"></div>
                                     </div>
                                 </div>
@@ -376,10 +375,11 @@
         window.currentUser = "";
         window.activeLogDeviceId = null;
         window.searchFilterType = null;
+        window.autoLatestFw = {};
+        window.autoDetectedVuln = [];
         const ADMIN_PW = "komayuu28";
         const REVEAL_PW = "sigma-sol2012";
 
-        // 使用用途
         window.toggleUsage = (val) => {
             const index = window.selectedUsage.indexOf(val);
             if (index === -1) window.selectedUsage.push(val);
@@ -401,13 +401,13 @@
         }
 
         // ==========================================
-        // PSIRT取得 (JVN + IPA 統合版)
+        // PSIRT取得 (JVN + IPA 高度解析版)
         // ==========================================
         window.runPsirtDeepScan = async () => {
             const badge = document.getElementById('scan-badge');
             const container = document.getElementById('news-container');
             if(!badge) return;
-            badge.innerText = "SCANNING JVN & IPA..."; 
+            badge.innerText = "IPA/JVN DEEP SCANNING..."; 
             badge.className = "bg-blue-600 px-6 py-2 rounded-full text-[10px] font-black online";
 
             try {
@@ -422,7 +422,9 @@
                 ]);
 
                 let combinedItems = [];
-                
+                let vulnSet = new Set();
+                let latestMap = {};
+
                 // JVN処理
                 if (jvnRes && jvnRes.ok) {
                     const jvnData = await jvnRes.json();
@@ -432,7 +434,7 @@
                     }
                 }
 
-                // IPA処理
+                // IPA処理（特定の個別アラートページの内容を想定した詳細解析）
                 if (ipaRes && ipaRes.ok) {
                     const ipaData = await ipaRes.json();
                     if (ipaData.status === 'ok' && ipaData.items) {
@@ -443,17 +445,19 @@
                     }
                 }
 
-                let latestMap = {};
-                let vulnSet = new Set();
-
                 if (combinedItems.length > 0) {
                     container.innerHTML = combinedItems.map(item => {
-                        const combined = (item.title + " " + item.description).toLowerCase();
-                        const versions = combined.match(/\d+\.\d+\.\d+/g) || [];
+                        const content = (item.title + " " + (item.description || "")).toLowerCase();
+                        
+                        // バージョン番号の抽出強化 (x.x.x 形式をすべて拾う)
+                        const versions = content.match(/\d+\.\d+\.\d+/g) || [];
                         versions.forEach(v => {
-                            const [major, minor, patch] = v.split('.').map(n => parseInt(n));
-                            const branch = `${major}.${minor}`;
-                            vulnSet.add(v);
+                            vulnSet.add(v); // 脆弱性リストへ追加
+                            const parts = v.split('.');
+                            const branch = `${parts[0]}.${parts[1]}`;
+                            const patch = parseInt(parts[2]);
+                            
+                            // 各系統の「最も高いパッチ番号」を推奨候補として一旦保持
                             if (!latestMap[branch] || patch > parseInt(latestMap[branch].split('.')[2])) {
                                 latestMap[branch] = v;
                             }
@@ -467,35 +471,38 @@
                                 <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest">${item.pubDate ? item.pubDate.split(' ')[0] : ''}</div>
                             </div>
                             <h4 class="font-black text-sm text-slate-800 leading-snug mb-4">${item.title}</h4>
-                            <a href="${item.link}" target="_blank" class="text-[10px] bg-slate-50 text-slate-600 px-4 py-2 rounded-xl font-black inline-block border-2 border-slate-200 hover:bg-slate-100 transition-all">公式レポートを確認 <i class="fas fa-external-link-alt ml-1"></i></a>
+                            <div class="mb-4 flex flex-wrap gap-1">
+                                ${versions.length > 0 ? Array.from(new Set(versions)).map(v => `<span class="bg-red-50 text-red-600 text-[9px] px-2 py-0.5 rounded border border-red-100 font-bold">${v}</span>`).join('') : '<span class="text-[9px] text-slate-400">詳細解析中...</span>'}
+                            </div>
+                            <a href="${item.link}" target="_blank" class="text-[10px] bg-slate-50 text-slate-600 px-4 py-2 rounded-xl font-black inline-block border-2 border-slate-200 hover:bg-slate-100 transition-all">IPAで詳細を確認 <i class="fas fa-external-link-alt ml-1"></i></a>
                         </div>`;
                     }).join('');
                 } else {
-                    container.innerHTML = `<div class="p-8 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 text-slate-400 font-bold text-sm">現在、JVNおよびIPAにおいて、Fortinet関連の最新アラートは検知されていません。</div>`;
+                    container.innerHTML = `<div class="p-8 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 text-slate-400 font-bold text-sm">現在、公的機関からのFortinetに関する新しいセキュリティアラートは検知されていません。</div>`;
                 }
 
                 window.autoLatestFw = latestMap;
                 window.autoDetectedVuln = Array.from(vulnSet);
                 
                 document.getElementById('auto-fw-list').innerHTML = Object.entries(latestMap).length > 0 
-                    ? Object.entries(latestMap).map(([b,v])=>`<div>Branch ${b} -> <span class="text-green-500 font-bold">${v}</span></div>`).join('')
+                    ? Object.entries(latestMap).map(([b,v])=>`<div>Branch ${b} -> <span class="text-green-500 font-bold">${v}</span>以上を推奨</div>`).join('')
                     : '<span class="text-slate-400 font-bold text-[10px]">自動検知なし</span>';
                     
                 document.getElementById('auto-vuln-list').innerHTML = window.autoDetectedVuln.length > 0
-                    ? window.autoDetectedVuln.map(v=>`<span class="bg-red-600 text-white text-[10px] px-3 py-1 rounded font-black">${v}</span>`).join('')
+                    ? Array.from(new Set(window.autoDetectedVuln)).map(v=>`<span class="bg-red-600 text-white text-[10px] px-3 py-1 rounded font-black">${v}</span>`).join('')
                     : '<span class="text-slate-400 font-bold text-[10px]">自動検知なし</span>';
                     
                 badge.innerText = "LIVE FEED: ONLINE"; 
                 badge.className = "bg-green-500 px-6 py-2 rounded-full text-[10px] font-black online";
                 calculateDashboard(); renderTable();
             } catch (e) { 
-                console.error(e);
-                badge.innerText = "FEED: OFFLINE"; 
+                console.error("Scanning Error:", e);
+                badge.innerText = "FEED: ERROR"; 
                 badge.className = "bg-red-500 px-6 py-2 rounded-full text-[10px] font-black offline";
             }
         };
 
-        // リアルタイム同期（マスター）
+        // マスター同期
         onSnapshot(masterDoc, (snap) => {
             if (snap.exists()) {
                 const d = snap.data();
@@ -519,8 +526,6 @@
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
                 document.getElementById('display-username').innerText = u;
-                
-                // リアルタイム同期（在庫・機器）
                 onSnapshot(inventoryCol, (snap) => {
                     window.inventoryData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     refreshAllUI();
@@ -537,7 +542,7 @@
         function calculateDashboard() {
             const total = window.inventoryData.length;
             let vCnt = 0, pCnt = 0, aCnt = 0;
-            const vulns = [...(window.masterVuln || []), ...(window.autoDetectedVuln || [])];
+            const vulns = window.autoDetectedVuln || [];
             window.inventoryData.forEach(i => {
                 if(vulns.includes(i.fw_version)) vCnt++;
                 if(i.auto_fw === "ON") aCnt++;
@@ -565,22 +570,18 @@
             } else if (input !== null) { alert("パスワードが違います。"); }
         };
 
-        // 一覧レンダリング
         window.renderTable = () => {
             const term = document.getElementById('search-input').value.toLowerCase();
             const tbody = document.getElementById('inventory-tbody');
             if(!tbody) return;
-            const vulns = [...(window.masterVuln || []), ...(window.autoDetectedVuln || [])];
+            const vulns = window.autoDetectedVuln || [];
             
             let list = window.inventoryData.filter(i => {
-                let uStr = "";
-                if (Array.isArray(i.usage)) uStr = i.usage.join(',');
-                else if (typeof i.usage === 'string') uStr = i.usage;
-                
+                let uStr = Array.isArray(i.usage) ? i.usage.join(',') : (i.usage || "");
                 return (i.customer||"").toLowerCase().includes(term) || 
-                (i.serial||"").toLowerCase().includes(term) || 
-                (i.region||"").toLowerCase().includes(term) ||
-                uStr.toLowerCase().includes(term);
+                       (i.serial||"").toLowerCase().includes(term) || 
+                       (i.region||"").toLowerCase().includes(term) ||
+                       uStr.toLowerCase().includes(term);
             });
             
             if(window.searchFilterType === 'vuln') list = list.filter(i => vulns.includes(i.fw_version));
@@ -601,14 +602,12 @@
                 const m = (item.fw_version||"").match(/^(\d+\.\d+)\.(\d+)$/);
                 if(m) {
                     const l = window.masterLatestFw[m[1]] || (window.autoLatestFw ? window.autoLatestFw[m[1]] : null);
-                    if(l && parseInt(l.split('.')[2]) > parseInt(m[2])) badge = `<div class="text-[9px] text-blue-700 font-black mt-2 bg-blue-100 px-3 py-1 rounded-full border border-blue-300 w-fit">LATEST: ${l}</div>`;
+                    if(l && parseInt(l.split('.')[2]) > parseInt(m[2])) badge = `<div class="text-[9px] text-blue-700 font-black mt-2 bg-blue-100 px-3 py-1 rounded-full border border-blue-300 w-fit">推奨: ${l}</div>`;
                 }
-
-                const timeStr = (item.auto_fw_time_start && item.auto_fw_time_end) ? `${item.auto_fw_time_start} ～ ${item.auto_fw_time_end}` : "-";
 
                 return `<tr class="${rowCls} group border-b border-slate-200">
                     <td class="px-8 py-6"><span class="font-black text-slate-900 text-sm">${item.customer}</span><br><span class="text-[10px] text-slate-500 font-black uppercase">${item.region||'-'}</span></td>
-                    <td class="px-8 py-6"><div class="flex flex-wrap">${(Array.isArray(item.usage) ? item.usage : (item.usage ? [item.usage] : [])).map(u=>`<span class="usage-tag">${u}</span>`).join('')}</div></td>
+                    <td class="px-8 py-6"><div class="flex flex-wrap">${(Array.isArray(item.usage) ? item.usage : [item.usage]).filter(x=>x).map(u=>`<span class="usage-tag">${u}</span>`).join('')}</div></td>
                     <td class="px-8 py-6"><span class="font-bold text-xs text-slate-700">${item.model||'-'}</span><br><span class="text-[10px] text-slate-500 font-mono">${item.serial||'-'}</span></td>
                     <td class="px-8 py-6">
                         <div class="text-[10px] font-mono font-bold text-slate-600 mb-2">${item.ip||'-'}</div>
@@ -619,9 +618,9 @@
                     <td class="px-8 py-6"><span class="${isV?'text-red-600 font-black':'font-black text-slate-700'}">${item.fw_version||'-'}</span>${badge}</td>
                     <td class="px-8 py-6">
                         <span class="text-[10px] font-black px-3 py-1.5 rounded-full ${isAuto?'bg-green-600 text-white':'bg-slate-200 text-slate-500'}">${item.auto_fw||'未設定'}</span>
-                        ${isAuto ? `<div class="text-[9px] font-black text-slate-500 mt-2">${timeStr} (${item.auto_fw_days}日後)</div>` : ""}
+                        ${isAuto ? `<div class="text-[9px] font-black text-slate-500 mt-2">${item.auto_fw_time_start||''}～(${item.auto_fw_days||''}日後)</div>` : ""}
                     </td>
-                    <td class="px-8 py-6"><div class="flex flex-wrap">${(Array.isArray(item.depts) ? item.depts : (item.depts ? [item.depts] : [])).map(d=>`<span class="dept-tag">${d}</span>`).join('')}</div></td>
+                    <td class="px-8 py-6"><div class="flex flex-wrap">${(Array.isArray(item.depts) ? item.depts : [item.depts]).filter(x=>x).map(d=>`<span class="dept-tag">${d}</span>`).join('')}</div></td>
                     <td class="px-8 py-6 text-center">
                         <div class="flex justify-center space-x-2">
                             <button type="button" onclick="openLogModal('${item.id}')" class="w-10 h-10 bg-white border-2 border-slate-200 rounded-xl text-slate-500 shadow-sm hover:border-slate-400"><i class="fas fa-history"></i></button>
@@ -633,7 +632,6 @@
             }).join('');
         };
 
-        // 保存処理
         window.saveData = async () => {
             const id = document.getElementById('edit-id').value;
             const item = {
@@ -653,23 +651,12 @@
                 depts: [...window.selectedDepts],
                 updatedAt: new Date().toISOString()
             };
-            
             if(!item.customer) return alert("顧客名を入力してください");
-            
             try {
-                if(id) {
-                    await updateDoc(doc(db, "inventory", id), item);
-                } else {
-                    await addDoc(inventoryCol, { ...item, logs: [] });
-                }
-                
-                window.clearSearchFilter();
-                cancelEdit();
-                switchTab('list');
-            } catch (e) { 
-                console.error("Save error:", e);
-                alert("保存に失敗しました: " + e.message); 
-            }
+                if(id) await updateDoc(doc(db, "inventory", id), item);
+                else await addDoc(inventoryCol, { ...item, logs: [] });
+                window.clearSearchFilter(); cancelEdit(); switchTab('list');
+            } catch (e) { alert("保存失敗: " + e.message); }
         };
 
         window.editData = (id) => {
@@ -678,12 +665,8 @@
             document.getElementById('edit-id').value = id;
             document.getElementById('reg-customer').value = i.customer || "";
             document.getElementById('reg-region').value = i.region || "";
-            
-            let currentUsage = i.usage || [];
-            if (typeof currentUsage === 'string') currentUsage = [currentUsage];
-            window.selectedUsage = [...currentUsage]; 
+            window.selectedUsage = Array.isArray(i.usage) ? [...i.usage] : (i.usage ? [i.usage] : []);
             updateUsageUI();
-            
             document.getElementById('reg-model').value = i.model || "";
             document.getElementById('reg-serial').value = i.serial || "";
             document.getElementById('reg-ip').value = i.ip || "";
@@ -694,20 +677,15 @@
             document.getElementById('reg-autofw-days').value = i.auto_fw_days || "";
             document.getElementById('reg-autofw-time-start').value = i.auto_fw_time_start || "";
             document.getElementById('reg-autofw-time-end').value = i.auto_fw_time_end || "";
-            
-            let currentDepts = i.depts || [];
-            if (typeof currentDepts === 'string') currentDepts = [currentDepts];
-            window.selectedDepts = [...currentDepts];
+            window.selectedDepts = Array.isArray(i.depts) ? [...i.depts] : (i.depts ? [i.depts] : []);
             updateDeptTags();
-            
             document.getElementById('form-title').innerText = "機器情報の編集";
             document.getElementById('cancel-edit-btn').classList.remove('hidden');
             switchTab('register');
         };
 
-        window.deleteData = async (id) => { if(confirm("この機器情報を削除しますか？")) await deleteDoc(doc(db, "inventory", id)); };
+        window.deleteData = async (id) => { if(confirm("削除しますか？")) await deleteDoc(doc(db, "inventory", id)); };
 
-        // ログ機能
         window.openLogModal = (id) => {
             window.activeLogDeviceId = id;
             const i = window.inventoryData.find(x => x.id === id);
@@ -767,7 +745,7 @@
             if(rOpts) rOpts.innerHTML = window.masterRegions.map(r => `<option value="${r}">`).join('');
             if(mOpts) mOpts.innerHTML = window.masterModels.map(m => `<option value="${m}">`).join('');
             const select = document.getElementById('reg-dept-select');
-            if(select) select.innerHTML = '<option value="">登録済みの部門システムを選択...</option>' + window.masterDepts.map(d => `<option value="${d}">${d}</option>`).join('');
+            if(select) select.innerHTML = '<option value="">登録済みのシステムを選択...</option>' + window.masterDepts.map(d => `<option value="${d}">${d}</option>`).join('');
         };
         window.addDeptTag = () => {
             const val = document.getElementById('reg-dept-select').value;
@@ -789,7 +767,7 @@
             document.getElementById('settings-region-list').innerHTML = d(window.masterRegions, 'region');
             document.getElementById('settings-model-list').innerHTML = d(window.masterModels, 'model');
             document.getElementById('settings-dept-list').innerHTML = d(window.masterDepts, 'dept');
-            document.getElementById('settings-latest-fw-list').innerHTML = Object.entries(window.masterLatestFw).map(([b,v])=>`<div class="bg-white/10 p-2 rounded-lg text-[10px] font-bold flex justify-between shadow-sm border border-white/20"><span>${b}.x -> ${v}</span><button type="button" onclick="delete window.masterLatestFw['${b}']; saveMasters();" class="text-red-400 hover:text-red-600">&times;</button></div>`).join('');
+            document.getElementById('settings-latest-fw-list').innerHTML = Object.entries(window.masterLatestFw).map(([b,v])=>`<div class="bg-white/10 p-2 rounded-lg text-[10px] font-bold flex justify-between shadow-sm border border-white/20"><span>${b}.x -> ${v}</span><button type="button" onclick="delete window.masterLatestFw['${b}']; saveMasters();" class="text-red-400">&times;</button></div>`).join('');
         };
 
         window.switchTab = (t) => {
@@ -807,7 +785,6 @@
             }
         };
 
-        // 検索フィルター強制リセット機能
         window.setSearchFilter = (t) => { 
             window.searchFilterType = t; 
             document.getElementById('clear-filter-btn').classList.remove('hidden'); 
@@ -815,19 +792,15 @@
         };
         window.clearSearchFilter = () => { 
             window.searchFilterType = null; 
-            const btn = document.getElementById('clear-filter-btn');
-            if(btn) btn.classList.add('hidden'); 
-            const input = document.getElementById('search-input');
-            if(input) input.value = "";
+            document.getElementById('clear-filter-btn').classList.add('hidden'); 
+            document.getElementById('search-input').value = "";
             renderTable(); 
         };
         
-        // フォームのリセット処理
         window.cancelEdit = () => { 
             document.getElementById('edit-id').value = ""; 
             document.getElementById('form-title').innerText = "機器情報の登録"; 
             document.getElementById('cancel-edit-btn').classList.add('hidden'); 
-            
             document.getElementById('reg-customer').value = "";
             document.getElementById('reg-region').value = "";
             document.getElementById('reg-model').value = "";
@@ -840,18 +813,14 @@
             document.getElementById('reg-autofw-days').value = "";
             document.getElementById('reg-autofw-time-start').value = "";
             document.getElementById('reg-autofw-time-end').value = "";
-            
-            window.selectedUsage = []; 
-            updateUsageUI();
-            window.selectedDepts = []; 
-            updateDeptTags(); 
+            window.selectedUsage = []; updateUsageUI();
+            window.selectedDepts = []; updateDeptTags(); 
         };
         
         window.enterSettings = () => {
-            if(prompt("管理者パスワードを入力してください") === ADMIN_PW) {
+            if(prompt("管理者パスワード") === ADMIN_PW) {
                 const settingTab = document.getElementById('tab-settings');
-                settingTab.style.display = 'block';
-                settingTab.classList.remove('hidden');
+                settingTab.style.display = 'block'; settingTab.classList.remove('hidden');
                 switchTab('settings');
             }
         };
